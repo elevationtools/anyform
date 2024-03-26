@@ -12,7 +12,7 @@ var singletonOnce sync.Once;
 
 func Singleton() *anyform.Anyform {
   singletonOnce.Do(func () {
-    singleton = anyform.New()
+    singleton = anyform.NewAnyform()
   })
   return singleton
 }

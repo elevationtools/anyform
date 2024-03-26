@@ -8,7 +8,7 @@ endef
 ifeq "$(MAKO_STAGE)" "main"
 
 DEFAULT_TARGETS := genfiles/anyform
-DEFAULT_PREREQS := $(shell find . -name genfiles -prune -o -name "*.go")
+DEFAULT_PREREQS := $(shell find . ../lib -name genfiles -prune -o -name "*.go")
 genfiles/anyform:
 	go build -o $@ .
 

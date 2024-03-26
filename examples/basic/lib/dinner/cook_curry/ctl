@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+. "$IMPL_DIR/common.sh"
+
+outfile="$ANYFORM_OUTPUT_DIR/$ANYFORM_STAGE_NAME/output.txt"
+
+function run_up() {
+  local curry_type veggies
+  curry_type="$(cat "$CONFIG_JSON_FILE" | jq .config.color)"
+  veggies="$(cat "$OUTPUT_DIR/shop.json" | jq -r '.vegetables | join(", ")' )"
+  mkdir -p "$(dirname "$outfile")"
+  echo "simmering $veggies in $curry_type curry" > "$outfile"
+}
+
+function run_down() {
+  rm -f "$outfile"
+}
+
+common_main "$@"
+

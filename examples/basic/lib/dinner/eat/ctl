@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+. "$IMPL_DIR/common.sh"
+
+function run_up() {
+  {
+    echo "Eating a {{ .any.config }} night dinner prepped by:"
+    {
+      cat "$ANYFORM_OUTPUT_DIR/cook_rice/output.txt"
+      cat "$ANYFORM_OUTPUT_DIR/cook_curry/output.txt"
+    } | sed 's/^/  /g'
+    # templating isn't needed here since we're in bash, but this is done here to
+    # demonstrate the feature which is important in other languages (Terraform,
+    # etc).
+    echo "{{ .Env.USER }} says yum yum!"
+  } > "$ANYFORM_OUTPUT_DIR/nomnom.txt"
+}
+
+function run_down() {
+  echo "Ignoring down is sometimes totally reasonable"
+}
+
