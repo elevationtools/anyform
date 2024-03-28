@@ -2,7 +2,7 @@
 package anyform
 
 import (
-  "fmt"
+  //"fmt"
 )
 
 type Anyform struct {
@@ -18,19 +18,6 @@ func NewAnyform() *Anyform {
   }
 }
 
-func (af* Anyform) Up() {
-  fmt.Println("lib-anyform Up!")
-  orc := NewOrchestrator(af.Config, af.Util)
-  fmt.Println(ToJSONString(orc.Spec))
-}
-
-func (af* Anyform) Down() {
-  fmt.Println("lib-anyform Down!")
-}
-
-func (af* Anyform) NewOrchestrator() *Orchestrator {
-	orc := &Orchestrator{}
-  Must1(af.Util.LoadJsonnetFile(af.Config.OrchestratorSpecFile, &orc.Spec))
-  fmt.Println(ToJSONString(orc.Spec))
-	return orc
+func (af* Anyform) NewOrchestrator() (*Orchestrator, error) {
+  return NewOrchestrator(af.Config, af.Util)
 }

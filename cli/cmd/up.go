@@ -2,15 +2,16 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	. "github.com/elevationtools/anyform/common/util"
 )
 
-// upCmd represents the up command
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "Run the up DAG.",
 	// Long: "",
 	Run: func(cmd *cobra.Command, args []string) {
-    Singleton().Up()
+    orc := Must(Singleton().NewOrchestrator())
+		Must1(orc.Up())
 	},
 }
 

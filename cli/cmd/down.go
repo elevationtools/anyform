@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	. "github.com/elevationtools/anyform/common/util"
 )
 
 var downCmd = &cobra.Command{
@@ -9,7 +10,7 @@ var downCmd = &cobra.Command{
 	Short: "Run the down DAG",
 	// Long: "",
 	Run: func(cmd *cobra.Command, args []string) {
-    Singleton().Down()
+    Must(Singleton().NewOrchestrator()).Down()
 	},
 }
 

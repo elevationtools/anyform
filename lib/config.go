@@ -47,4 +47,3 @@ func DefaultConfig() *AnyformConfig {
   
   return defaultConfig
 }
-

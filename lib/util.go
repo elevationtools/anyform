@@ -7,21 +7,14 @@ import (
   "os/exec"
 )
 
-func Must[T any](result T, err error) T {
-  if err != nil { panic(err) }
-  return result
-}
-
-func Must1(err error) {
-  if err != nil { panic(err) }
-}
-
-func ToJSONString(value any) string {
-  return string(Must(json.MarshalIndent(value, "", "  ")))
+func ToJSONString(value any) (string, error) {
+  res, err := json.MarshalIndent(value, "", "  ")
+  if err != nil { return "", err }
+  return string(res), nil
 }
 
 func FromJSONBytes[T any](jsonBytes []byte, out T) error {
-  return json.Unmarshal(jsonBytes, &out)
+  return json.Unmarshal(jsonBytes, out)
 }
 
 type Util struct {
