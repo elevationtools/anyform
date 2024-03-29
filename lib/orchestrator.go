@@ -113,3 +113,8 @@ func (orc* Orchestrator) Down(ctx context.Context) error {
 
   return dag.Run(ctx)
 }
+
+func (orc* Orchestrator) Clean(ctx context.Context) error {
+  return os.RemoveAll(orc.globe.Config.Orchestrator.GenfilesDir)
+}
+
