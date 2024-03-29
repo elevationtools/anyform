@@ -19,23 +19,23 @@ type OrchestratorSpec struct {
 }
 
 type Orchestrator struct {
-  locator *Locator
+  globe *Globe
   Spec OrchestratorSpec
   Stages map[string]*Stage
 }
 
-func NewOrchestrator(locator *Locator) (*Orchestrator, error) {
+func NewOrchestrator(globe *Globe) (*Orchestrator, error) {
   orc := &Orchestrator{
-    locator: locator,
+    globe: globe,
     Stages: map[string]*Stage{},
   }
-  err := orc.locator.JsonnetRunner.Run(
-      orc.locator.Config.OrchestratorSpecFile, &orc.Spec)
+  err := orc.globe.ConfigLoader.Load(
+      orc.globe.Config.OrchestratorSpecFile, &orc.Spec)
   if err != nil { return nil, err }
 
   for stageName, iStageSpec := range orc.Spec.Stages {
     stageSpec := iStageSpec
-    orc.Stages[stageName] = NewStage(stageName, orc.locator, &orc.Spec, &stageSpec)
+    orc.Stages[stageName] = NewStage(stageName, orc.globe, &orc.Spec, &stageSpec)
   }
 
   for _, stage := range orc.Stages {
@@ -76,7 +76,7 @@ func (orc* Orchestrator) Up(ctx context.Context) error {
 }
 
 func (orc* Orchestrator) WriteConfigJsonFile() error {
-	outFilePath := orc.locator.Config.Orchestrator.ConfigJsonFile
+	outFilePath := orc.globe.Config.Orchestrator.ConfigJsonFile
 
 	jsonString, err := util.ToJSONString(orc.Spec.InnerCfg)
 	if err != nil { return fmt.Errorf("converting InnerCfg to JSON: %w", err) }

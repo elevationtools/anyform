@@ -7,18 +7,16 @@ import (
 )
 
 type Anyform struct {
-  locator *Locator
+  globe *Globe
 }
 
 func NewDefaultAnyform() *Anyform {
 	slog.SetLogLoggerLevel(slog.LevelDebug)
-
-	loc := NewDefaultLocator()
   return &Anyform{
-    locator: loc,
+    globe: NewDefaultGlobe(),
   }
 }
 
 func (af* Anyform) NewOrchestrator() (*Orchestrator, error) {
-  return NewOrchestrator(af.locator)
+  return NewOrchestrator(af.globe)
 }

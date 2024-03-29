@@ -21,19 +21,19 @@ type Stage struct {
   DependsOn []*Stage
   RequiredBy []*Stage
 
-  locator *Locator
+  globe *Globe
   orchestratorSpec *OrchestratorSpec
   spec *StageSpec
 }
 
-func NewStage(name string, locator *Locator,
+func NewStage(name string, globe *Globe,
               orchestratorSpec *OrchestratorSpec, spec *StageSpec) *Stage {
   return &Stage{
     Name: name,
     DependsOn: []*Stage{},
     RequiredBy: []*Stage{},
 
-    locator: locator,
+    globe: globe,
     orchestratorSpec: orchestratorSpec,
     spec: spec,
   }
@@ -57,7 +57,7 @@ func (s *Stage) Up(ctx context.Context) error {
 }
 
 func (s *Stage) stampDir() string {
-  return filepath.Join(s.locator.Config.Orchestrator.GenfilesDir, s.Name)
+  return filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name)
 }
 
 func (s *Stage) Stamp() error {
@@ -65,7 +65,7 @@ func (s *Stage) Stamp() error {
   stampDir := s.stampDir()
   slog.Debug(fmt.Sprintf("mkdir -p %v", stampDir))
   os.MkdirAll(stampDir, 0750)
-  return s.locator.GomplateRunner.Run(
+  return s.globe.StageStamper.Stamp(
     filepath.Join(s.orchestratorSpec.ImplDir, s.Name), stampDir)
 }
 
@@ -82,12 +82,12 @@ func (s *Stage) RunCmd(ctx context.Context, cmdStr string) error {
   cmd.Dir = s.stampDir()
 	cmd.Env = append(cmd.Environ(),
 		"ANYFORM_STAGE_NAME=" + s.Name,
-		"ANYFORM_CONFIG_JSON_FILE=" + AbsJoin(s.locator.Config.Orchestrator.ConfigJsonFile),
-		"ANYFORM_GENFILES=" + AbsJoin(s.locator.Config.Orchestrator.GenfilesDir),
+		"ANYFORM_CONFIG_JSON_FILE=" + AbsJoin(s.globe.Config.Orchestrator.ConfigJsonFile),
+		"ANYFORM_GENFILES=" + AbsJoin(s.globe.Config.Orchestrator.GenfilesDir),
 		"ANYFORM_IMPL_DIR=" + AbsJoin(s.orchestratorSpec.ImplDir),
-		"ANYFORM_OUTPUT_DIR=" + AbsJoin(s.locator.Config.Orchestrator.OutputDir),
+		"ANYFORM_OUTPUT_DIR=" + AbsJoin(s.globe.Config.Orchestrator.OutputDir),
 		"ANYFORM_INTERACTIVE=" + func() string {
-			if s.locator.Config.Orchestrator.Interactive { return "true" }
+			if s.globe.Config.Orchestrator.Interactive { return "true" }
 			return "false"
 		}(),
   )
