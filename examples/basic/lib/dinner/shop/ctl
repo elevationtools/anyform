@@ -4,6 +4,9 @@
 outfile="$ANYFORM_OUTPUT_DIR/$ANYFORM_STAGE_NAME/output.json"
 
 function run_up() {
+  echo "Walking to the store"
+  echo "Filling up the cart"
+
   mkdir -p "$(dirname "$outfile")"
   sed 's/^    //g' <<EOF | jq > "$outfile"
     {
@@ -11,6 +14,9 @@ function run_up() {
       "rice": "jasmin"
     }
 EOF
+
+  echo "Pay for everything"
+  echo "Head home"
 }
 
 function run_down() {

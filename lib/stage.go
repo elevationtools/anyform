@@ -1,13 +1,12 @@
-
 package anyform
 
 import (
-  "context"
-  "fmt"
-  "log/slog"
-  "os"
-  "os/exec"
-  "path/filepath"
+	"context"
+	"fmt"
+	"log/slog"
+	"os"
+	"os/exec"
+	"path/filepath"
 )
 
 // Stage ///////////////////////////////////////////////////////////////////////
@@ -57,14 +56,15 @@ func (s *Stage) Up(ctx context.Context) error {
 }
 
 func (s *Stage) stampDir() string {
-  return filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name)
+  return filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "stamp")
+
 }
 
 func (s *Stage) Stamp() error {
   slog.Info("stage stamping", "stage", s.Name)
   stampDir := s.stampDir()
-  slog.Debug(fmt.Sprintf("mkdir -p %v", stampDir))
-  os.MkdirAll(stampDir, 0750)
+ 	err := os.MkdirAll(stampDir, 0750)
+	if err != nil { return fmt.Errorf("mkdir -p '%v': %w", stampDir, err) }
   return s.globe.StageStamper.Stamp(
     filepath.Join(s.orchestratorSpec.ImplDir, s.Name), stampDir)
 }
@@ -75,10 +75,11 @@ func AbsJoin(elem ...string) string {
 	return res
 }
 
-func (s *Stage) RunCmd(ctx context.Context, cmdStr string) error {
-  logStr := "stage './ctl " + cmdStr + "'"
+func (s *Stage) RunCmd(ctx context.Context, ctlArg string) error {
+  logStr := "stage './ctl " + ctlArg + "'"
   slog.Info(logStr, "stage", s.Name)
-  cmd := exec.CommandContext(ctx, AbsJoin(s.stampDir(), "/ctl"), cmdStr)
+
+  cmd := exec.CommandContext(ctx, AbsJoin(s.stampDir(), "/ctl"), ctlArg)
   cmd.Dir = s.stampDir()
 	cmd.Env = append(cmd.Environ(),
 		"ANYFORM_STAGE_NAME=" + s.Name,
@@ -91,11 +92,12 @@ func (s *Stage) RunCmd(ctx context.Context, cmdStr string) error {
 			return "false"
 		}(),
   )
-  res, err := cmd.CombinedOutput()
-  if err != nil {
-    return fmt.Errorf(logStr + ": %w: output: %v", err, string(res))
-  }
-  slog.Info(logStr + " completed", "stage", s.Name, "result", string(res))
+	err := s.globe.SubprocessRunner.RunCmd(
+			"stage=" + s.Name, cmd, filepath.Join(
+			s.globe.Config.Orchestrator.GenfilesDir, s.Name, "logs"))
+	if err != nil { return fmt.Errorf("stage %v: %w", s.Name, err) }
+
+  slog.Info(logStr + " completed", "stage", s.Name)
   return nil
 }
 

@@ -11,6 +11,10 @@
 // - Disadvantage: same as above.
 package anyform
 
+import (
+	"os/exec"
+)
+
 type ConfigLoader interface {
 	Load(inputFilePath string, out any) error
 }
@@ -19,10 +23,15 @@ type StageStamper interface {
   Stamp(inputDir string, outputDir string) error
 }
 
+type SubprocessRunner interface {
+	RunCmd(name string, cmd *exec.Cmd, logDir string) error
+}
+
 type Globe struct {
 	Config* AnyformConfig
 	StageStamper StageStamper
 	ConfigLoader ConfigLoader
+	SubprocessRunner SubprocessRunner 
 }
 
 func NewDefaultGlobe() *Globe {
@@ -30,5 +39,6 @@ func NewDefaultGlobe() *Globe {
 	globe.Config = NewDefaultAnyformConfig()
 	globe.StageStamper = NewGomplateCliStageStamper(globe)
 	globe.ConfigLoader = NewJsonnetCliConfigLoader(globe)
+	globe.SubprocessRunner = NewDefaultSubprocessRunner(globe)
 	return globe
 }

@@ -4,6 +4,8 @@
 outfile="$ANYFORM_OUTPUT_DIR/nomnom.txt"
 
 function run_up() {
+  echo "Nom nom nom"
+
   mkdir -p "$(dirname "$outfile")"
   {
     echo "Eating a {{ .cfg.day }} night dinner prepped by:"
@@ -16,6 +18,8 @@ function run_up() {
     # etc).
     echo "{{ .Env.USER }} says yum yum!"
   } > "$outfile"
+
+  echo "Yum"
 }
 
 function run_down() {
