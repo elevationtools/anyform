@@ -1,6 +1,7 @@
 
 export REPO_ROOT := $(CURDIR)
 
+.DEFAULT_GOAL := build
 .PHONY: build
 build: cli/genfiles/anyform
 

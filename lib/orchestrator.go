@@ -29,6 +29,7 @@ func NewOrchestrator(globe *Globe) (*Orchestrator, error) {
     globe: globe,
     Stages: map[string]*Stage{},
   }
+
   err := orc.globe.ConfigLoader.Load(
       orc.globe.Config.OrchestratorSpecFile, &orc.Spec)
   if err != nil { return nil, err }
