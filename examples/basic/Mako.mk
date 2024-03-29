@@ -17,6 +17,10 @@ up:
 .PHONY: down
 down:
 	cd prod/tuesday && anyform down
+
+.PHONY: spec
+spec:
+	cd prod/tuesday && anyform spec
 	
 
 endif

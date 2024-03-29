@@ -3,24 +3,23 @@ package anyform
 
 import (
   "os"
-  "sync"
+	"path/filepath"
 )
 
 type OrchestratorConfig struct {
   GenfilesDir string `json:"genfiles_dir"`
   OutputDir string `json:"output_dir"`
+  ConfigJsonFile string `json:"config_json_file"`
   Interactive bool `json:"interactive"`
 }
 
 type AnyformConfig struct {
+  Orchestrator OrchestratorConfig
+  OrchestratorSpecFile string
   Jsonnet string
   JsonnetDeps string
-  OrchestratorSpecFile string
-  Orchestrator OrchestratorConfig
+  Gomplate string
 }
-
-var defaultConfig *AnyformConfig
-var initDefaultConfigOnce sync.Once
 
 func Getenv(envVar string, defaultValue string) string {
   value := os.Getenv(envVar)
@@ -31,19 +30,19 @@ func Getenv(envVar string, defaultValue string) string {
   }
 }
 
-func DefaultConfig() *AnyformConfig {
-  initDefaultConfigOnce.Do(func() {
-    defaultConfig = &AnyformConfig{
-      Orchestrator: OrchestratorConfig{
-        GenfilesDir: Getenv("ANYFORM_GENFILES_DIR", "genfiles"),
-        OutputDir: Getenv("ANYFORM_OUTPUT_DIR", "output"),
-        Interactive: true,
-      },
-      OrchestratorSpecFile: "anyform.jsonnet",
-      Jsonnet: Getenv("JSONNET", "jsonnet"),
-      JsonnetDeps: Getenv("JSONNET_DEPS", "jsonnet-deps"),
-    }
-  })
-  
-  return defaultConfig
+func NewDefaultAnyformConfig() *AnyformConfig {
+  ac := &AnyformConfig{}
+
+	ac.Orchestrator.GenfilesDir = Getenv("ANYFORM_GENFILES_DIR", "genfiles")
+	ac.Orchestrator.OutputDir = Getenv("ANYFORM_OUTPUT_DIR", "output")
+	ac.Orchestrator.ConfigJsonFile = Getenv("ANYFORM_CONFIG_JSON_FILE",
+			filepath.Join(ac.Orchestrator.GenfilesDir, "config.json"))
+	ac.Orchestrator.Interactive = true
+
+	ac.OrchestratorSpecFile = "anyform.jsonnet"
+	ac.Jsonnet = Getenv("JSONNET", "jsonnet")
+	ac.JsonnetDeps = Getenv("JSONNET_DEPS", "jsonnet-deps")
+	ac.Gomplate = Getenv("GOMPLATE", "gomplate")
+
+	return ac
 }

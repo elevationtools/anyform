@@ -10,10 +10,9 @@ import (
 var singleton *anyform.Anyform;
 var singletonOnce sync.Once;
 
-func Singleton() *anyform.Anyform {
+func AnyformSingleton() *anyform.Anyform {
   singletonOnce.Do(func () {
-    singleton = anyform.NewAnyform()
+    singleton = anyform.NewDefaultAnyform()
   })
   return singleton
 }
-

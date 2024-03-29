@@ -1,31 +1,35 @@
 package cmd
 
 import (
-	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
+
+	commonutil "github.com/elevationtools/anyform/common/util"
 )
 
-var upCmd = &cobra.Command{
-	Use:   "up",
-	Short: "Run the up DAG.",
+var specCmd = &cobra.Command{
+	Use:   "spec",
+	Short: "Print the orchestrator spec",
 	// Long: "",
 	Run: func(cmd *cobra.Command, args []string) {
     orc := Must(AnyformSingleton().NewOrchestrator())
-		Must1(orc.Up(context.Background()))
+		fmt.Printf("Orchestrator Spec: ")
+		fmt.Println(Must(commonutil.ToJSONString(orc.Spec)))
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(upCmd)
+	rootCmd.AddCommand(specCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// upCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// specCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// upCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// specCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
+

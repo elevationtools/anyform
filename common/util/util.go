@@ -1,11 +1,16 @@
 
 package util
 
-func Must[T any](result T, err error) T {
-  if err != nil { panic(err) }
-  return result
+import (
+	"encoding/json"
+)
+
+func ToJSONString(value any) (string, error) {
+  res, err := json.MarshalIndent(value, "", "  ")
+  if err != nil { return "", err }
+  return string(res), nil
 }
 
-func Must1(err error) {
-  if err != nil { panic(err) }
+func FromJSONBytes[T any](jsonBytes []byte, out T) error {
+  return json.Unmarshal(jsonBytes, out)
 }

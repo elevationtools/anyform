@@ -1,58 +1,45 @@
-
 package anyform
 
 import (
 	"context"
-  "fmt"
-	"time"
+	"fmt"
+	"os"
+	"path/filepath"
 
-  commonutil "github.com/elevationtools/anyform/common/util"
-  daglib "github.com/elevationtools/anyform/lib/dag/mubased"
+	util "github.com/elevationtools/anyform/common/util"
+	daglib "github.com/elevationtools/anyform/lib/dag/mubased"
 )
 
-type StageSpec struct {
-  DependsOn []string `json:"depends_on"`
-}
+// Orchestrator ////////////////////////////////////////////////////////////////
 
 type OrchestratorSpec struct {
   ImplDir string `json:"impl_dir"`
   Stages map[string]StageSpec `json:"stages"`
-  Config map[string]any `json:"config"`
-}
-
-type Stage struct {
-  Name string
-  Spec *StageSpec
-  DependsOn []*Stage
-  RequiredBy []*Stage
-}
-
-func NewStage(name string, spec *StageSpec) *Stage {
-  return &Stage{
-    Name: name,
-    Spec: spec,
-  }
+  InnerCfg map[string]any `json:"config"`
 }
 
 type Orchestrator struct {
+  locator *Locator
   Spec OrchestratorSpec
   Stages map[string]*Stage
 }
 
-func NewOrchestrator(config *AnyformConfig, util *Util) (*Orchestrator, error) {
+func NewOrchestrator(locator *Locator) (*Orchestrator, error) {
   orc := &Orchestrator{
+    locator: locator,
     Stages: map[string]*Stage{},
   }
-  err := util.LoadJsonnetFile(config.OrchestratorSpecFile, &orc.Spec)
+  err := orc.locator.JsonnetRunner.Run(
+      orc.locator.Config.OrchestratorSpecFile, &orc.Spec)
   if err != nil { return nil, err }
 
   for stageName, iStageSpec := range orc.Spec.Stages {
-		stageSpec := iStageSpec
-    orc.Stages[stageName] = NewStage(stageName, &stageSpec)
+    stageSpec := iStageSpec
+    orc.Stages[stageName] = NewStage(stageName, orc.locator, &orc.Spec, &stageSpec)
   }
 
   for _, stage := range orc.Stages {
-    for _, depName := range stage.Spec.DependsOn {
+    for _, depName := range stage.spec.DependsOn {
       dep, found := orc.Stages[depName]
       if !found {
         return nil, fmt.Errorf(
@@ -66,14 +53,14 @@ func NewOrchestrator(config *AnyformConfig, util *Util) (*Orchestrator, error) {
   return orc, nil
 }
 
-func (orc* Orchestrator) Up() error {
-  fmt.Println("lib-anyform Up!")
-  fmt.Println(commonutil.Must(ToJSONString(orc.Spec)))
+func (orc* Orchestrator) Up(ctx context.Context) error {
+	err := orc.WriteConfigJsonFile()
+	if err != nil { return err }
 
   dag := daglib.NewDag()
 
   for _, iStage := range orc.Stages {
-		stage := iStage
+    stage := iStage
 
     parentNames := []string{}
     for _, parentStage := range stage.DependsOn {
@@ -81,21 +68,38 @@ func (orc* Orchestrator) Up() error {
     }
 
     dag.AddVertex(stage.Name, parentNames, func (ctx context.Context) error {
-      fmt.Printf("%v: bringing up\n", stage.Name)
-			time.Sleep(1 * time.Second)
-      fmt.Printf("%v: done\n", stage.Name)
-      return nil
+      return stage.Up(ctx)
     })
   }
 
-  return dag.Run(context.TODO())
+  return dag.Run(ctx)
 }
 
-func (orc* Orchestrator) Down() error {
+func (orc* Orchestrator) WriteConfigJsonFile() error {
+	outFilePath := orc.locator.Config.Orchestrator.ConfigJsonFile
+
+	jsonString, err := util.ToJSONString(orc.Spec.InnerCfg)
+	if err != nil { return fmt.Errorf("converting InnerCfg to JSON: %w", err) }
+
+	dir := filepath.Dir(outFilePath)
+	err = os.MkdirAll(dir, 0750)
+	if err != nil { return fmt.Errorf("mkdir -p %v: %w", dir, err) }
+
+	
+	err = os.WriteFile(outFilePath, []byte(jsonString), 0660)
+	if err != nil { return fmt.Errorf("writing %v: %w", outFilePath, err) }
+
+	return nil
+}
+
+func (orc* Orchestrator) Down(ctx context.Context) error {
+	err := orc.WriteConfigJsonFile()
+	if err != nil { return err }
+
   dag := daglib.NewDag()
 
   for _, iStage := range orc.Stages {
-		stage := iStage
+    stage := iStage
 
     childNames := []string{}
     for _, childStage := range stage.RequiredBy {
@@ -103,12 +107,9 @@ func (orc* Orchestrator) Down() error {
     }
 
     dag.AddVertex(stage.Name, childNames, func (ctx context.Context) error {
-      fmt.Printf("%v: bringing down\n", stage.Name)
-			time.Sleep(1 * time.Second)
-      fmt.Printf("%v: done\n", stage.Name)
-      return nil
-		})
-	}
+      return stage.Down(ctx)
+    })
+  }
 
-  return dag.Run(context.TODO())
+  return dag.Run(ctx)
 }

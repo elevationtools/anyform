@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-. "$IMPL_DIR/common.sh"
+. "$ANYFORM_IMPL_DIR/common.sh"
 
 outfile="$ANYFORM_OUTPUT_DIR/$ANYFORM_STAGE_NAME/output.txt"
 
 function run_up() {
-  echo "boiling $(cat "$OUTPUT_DIR/shop" | jq .rice) rice" \
+  mkdir -p "$(dirname "$outfile")"
+  echo "boiling $(cat "$ANYFORM_OUTPUT_DIR/shop/output.json" | jq .rice) rice" \
     > "$outfile"
 }
 

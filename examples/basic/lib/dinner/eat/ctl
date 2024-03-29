@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-. "$IMPL_DIR/common.sh"
+. "$ANYFORM_IMPL_DIR/common.sh"
+
+outfile="$ANYFORM_OUTPUT_DIR/nomnom.txt"
 
 function run_up() {
+  mkdir -p "$(dirname "$outfile")"
   {
-    echo "Eating a {{ .any.config }} night dinner prepped by:"
+    echo "Eating a {{ .cfg.day }} night dinner prepped by:"
     {
       cat "$ANYFORM_OUTPUT_DIR/cook_rice/output.txt"
       cat "$ANYFORM_OUTPUT_DIR/cook_curry/output.txt"
@@ -12,10 +15,12 @@ function run_up() {
     # demonstrate the feature which is important in other languages (Terraform,
     # etc).
     echo "{{ .Env.USER }} says yum yum!"
-  } > "$ANYFORM_OUTPUT_DIR/nomnom.txt"
+  } > "$outfile"
 }
 
 function run_down() {
   echo "Ignoring down is sometimes totally reasonable"
 }
+
+common_main "$@"
 

@@ -3,21 +3,22 @@ package anyform
 
 import (
   //"fmt"
+	"log/slog"
 )
 
 type Anyform struct {
-  Config *AnyformConfig
-  Util *Util
+  locator *Locator
 }
 
-func NewAnyform() *Anyform {
-  config := DefaultConfig()
+func NewDefaultAnyform() *Anyform {
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
+	loc := NewDefaultLocator()
   return &Anyform{
-    Config: config,
-    Util: NewUtil(config),
+    locator: loc,
   }
 }
 
 func (af* Anyform) NewOrchestrator() (*Orchestrator, error) {
-  return NewOrchestrator(af.Config, af.Util)
+  return NewOrchestrator(af.locator)
 }
