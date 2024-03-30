@@ -3,10 +3,12 @@ package anyform
 import (
   "context"
   "fmt"
+	"io/fs"
   "log/slog"
   "os"
   "os/exec"
   "path/filepath"
+	 "time"
 
   commonutil "github.com/elevationtools/anyform/module/common/util"
 )
@@ -105,7 +107,31 @@ func (s *Stage) alreadyUpToDate(command string) (bool, error) {
   if configFileInfo.ModTime().After(stateFileInfo.ModTime()) {
     return false, nil
   }
+	maxImplFileModTime, err := s.maxImplFileModTime()
+	if err != nil { return false, err }
+  if maxImplFileModTime.After(stateFileInfo.ModTime()) {
+    return false, nil
+	}
   return true, nil
+}
+
+func (s *Stage) maxImplFileModTime() (time.Time, error) {
+	maxTime := time.UnixMilli(0)
+	err := filepath.Walk(s.stageImplDir,
+			func (path string, info fs.FileInfo, err error) error {
+		if err != nil { return err }
+		modTime := info.ModTime()
+		if modTime.After(maxTime) { maxTime = modTime }
+		return nil
+	})
+	if err != nil { return maxTime, err }
+
+	for _, parent := range s.DependsOn {
+		parentMax, err := parent.maxImplFileModTime()
+		if err != nil { return maxTime, err }
+		if parentMax.After(maxTime) { maxTime = parentMax }
+	}
+	return maxTime, nil
 }
 
 func (s *Stage) stampDir() string {
@@ -117,8 +143,7 @@ func (s *Stage) Stamp() error {
   stampDir := s.stampDir()
    err := os.MkdirAll(stampDir, 0750)
   if err != nil { return fmt.Errorf("mkdir -p '%v': %w", stampDir, err) }
-  return s.globe.StageStamper.Stamp(
-    filepath.Join(s.orchestratorSpec.ImplDir, s.Name), stampDir)
+  return s.globe.StageStamper.Stamp(s.stageImplDir, stampDir)
 }
 
 func AbsJoin(elem ...string) string {
