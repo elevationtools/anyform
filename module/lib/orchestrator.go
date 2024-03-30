@@ -3,11 +3,13 @@ package anyform
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
+  "time"
 
-	util "github.com/elevationtools/anyform/common/util"
-	daglib "github.com/elevationtools/anyform/lib/dag/mubased"
+	util "github.com/elevationtools/anyform/module/common/util"
+	daglib "github.com/elevationtools/anyform/module/lib/dag/mubased"
 )
 
 // Orchestrator ////////////////////////////////////////////////////////////////
@@ -34,11 +36,15 @@ func NewOrchestrator(globe *Globe) (*Orchestrator, error) {
       orc.globe.Config.OrchestratorSpecFile, &orc.Spec)
   if err != nil { return nil, err }
 
+  err = orc.MaybeUpdateConfigJsonFile()
+  if err != nil { return nil, err }
+
   for stageName, iStageSpec := range orc.Spec.Stages {
     stageSpec := iStageSpec
     orc.Stages[stageName] = NewStage(stageName, orc.globe, &orc.Spec, &stageSpec)
   }
 
+	// Build stage DAG.
   for _, stage := range orc.Stages {
     for _, depName := range stage.spec.DependsOn {
       dep, found := orc.Stages[depName]
@@ -54,10 +60,46 @@ func NewOrchestrator(globe *Globe) (*Orchestrator, error) {
   return orc, nil
 }
 
-func (orc* Orchestrator) Up(ctx context.Context) error {
-	err := orc.WriteConfigJsonFile()
-	if err != nil { return err }
+func (orc* Orchestrator) MaybeUpdateConfigJsonFile() error {
+  depFiles, err := orc.globe.ConfigLoader.GetTransitiveDeps(
+      orc.globe.Config.OrchestratorSpecFile)
+  if err != nil { return err }
 
+  configsMaxModTime := time.UnixMilli(0)
+  for _, f := range depFiles {
+    info, err := os.Stat(f)
+    if err != nil {
+			return fmt.Errorf("Stat()ing config file '%v': %w", f, err)
+		}
+		modTime := info.ModTime()
+		if modTime.After(configsMaxModTime) { configsMaxModTime = modTime }
+  }
+
+	jsonFilePath := orc.globe.Config.Orchestrator.ConfigJsonFile
+	jsonFileInfo, err := os.Stat(jsonFilePath)
+	if err != nil {
+		return fmt.Errorf("Stat()ing config JSON file '%v': %w", jsonFilePath, err)
+	}
+
+	if !configsMaxModTime.After(jsonFileInfo.ModTime()) {
+		slog.Debug("config json file already up to date")
+		return nil
+	}
+
+	jsonString, err := util.ToJSONString(orc.Spec.InnerCfg)
+	if err != nil { return fmt.Errorf("converting InnerCfg to JSON: %w", err) }
+
+	dir := filepath.Dir(jsonFilePath)
+	err = os.MkdirAll(dir, 0750)
+	if err != nil { return fmt.Errorf("mkdir -p %v: %w", dir, err) }
+	
+	err = os.WriteFile(jsonFilePath, []byte(jsonString), 0660)
+	if err != nil { return fmt.Errorf("writing %v: %w", jsonFilePath, err) }
+
+	return nil
+}
+
+func (orc* Orchestrator) Up(ctx context.Context) error {
   dag := daglib.NewDag()
 
   for _, iStage := range orc.Stages {
@@ -76,27 +118,8 @@ func (orc* Orchestrator) Up(ctx context.Context) error {
   return dag.Run(ctx)
 }
 
-func (orc* Orchestrator) WriteConfigJsonFile() error {
-	outFilePath := orc.globe.Config.Orchestrator.ConfigJsonFile
-
-	jsonString, err := util.ToJSONString(orc.Spec.InnerCfg)
-	if err != nil { return fmt.Errorf("converting InnerCfg to JSON: %w", err) }
-
-	dir := filepath.Dir(outFilePath)
-	err = os.MkdirAll(dir, 0750)
-	if err != nil { return fmt.Errorf("mkdir -p %v: %w", dir, err) }
-
-	
-	err = os.WriteFile(outFilePath, []byte(jsonString), 0660)
-	if err != nil { return fmt.Errorf("writing %v: %w", outFilePath, err) }
-
-	return nil
-}
-
 func (orc* Orchestrator) Down(ctx context.Context) error {
-	err := orc.WriteConfigJsonFile()
-	if err != nil { return err }
-
+  panic("TODO: not implemented properly, needs to write config json file if out of date")
   dag := daglib.NewDag()
 
   for _, iStage := range orc.Stages {

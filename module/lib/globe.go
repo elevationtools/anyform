@@ -17,6 +17,7 @@ import (
 
 type ConfigLoader interface {
 	Load(inputFilePath string, out any) error
+  GetTransitiveDeps(inputFilePath string) ([]string, error)
 }
 
 type StageStamper interface {
@@ -42,3 +43,4 @@ func NewDefaultGlobe() *Globe {
 	globe.SubprocessRunner = NewDefaultSubprocessRunner(globe)
 	return globe
 }
+

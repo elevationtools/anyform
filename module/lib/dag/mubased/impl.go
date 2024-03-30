@@ -9,7 +9,7 @@ import (
 	"strings"
   "sync"
 
-  daglib "github.com/elevationtools/anyform/lib/dag"
+  daglib "github.com/elevationtools/anyform/module/lib/dag"
 )
 
 // Vertex //////////////////////////////////////////////////////////////////////

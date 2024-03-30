@@ -2,7 +2,7 @@
 package main
 
 import (
-  "github.com/elevationtools/anyform/cli/cmd"
+  "github.com/elevationtools/anyform/module/cli/cmd"
 )
 
 func main() {

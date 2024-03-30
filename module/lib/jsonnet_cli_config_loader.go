@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/elevationtools/anyform/common/util"
+	"github.com/elevationtools/anyform/module/common/util"
 )
 
 type JsonnetCliConfigLoader struct {

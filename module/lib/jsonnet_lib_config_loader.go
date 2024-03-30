@@ -8,7 +8,7 @@ import (
 
 	jsonnet "github.com/google/go-jsonnet"
 
-	"github.com/elevationtools/anyform/common/util"
+	"github.com/elevationtools/anyform/module/common/util"
 )
 
 type JsonnetLibConfigLoader struct {
@@ -35,3 +35,10 @@ func (jl *JsonnetLibConfigLoader) Load(inputFilePath string, out any) error {
   return util.FromJSONString(jsonString, out)
 }
 
+// Returns "jsonnet-deps $inputFilePath" except that it also returns the
+// inputFilePath.
+func (jl *JsonnetLibConfigLoader) GetTransitiveDeps(inputFilePath string) ([]string, error) {
+  paths, err := jl.vm.FindDependencies("", []string{inputFilePath})
+  if err != nil { return nil, fmt.Errorf("jsonnet GetTransitiveDeps: %w", err) }
+  return append(paths, inputFilePath), nil
+}

@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	commonutil "github.com/elevationtools/anyform/common/util"
+	commonutil "github.com/elevationtools/anyform/module/common/util"
 )
 
 var specCmd = &cobra.Command{

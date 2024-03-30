@@ -8,7 +8,7 @@ import (
   "os/exec"
   "path/filepath"
 
-  commonutil "github.com/elevationtools/anyform/common/util"
+  commonutil "github.com/elevationtools/anyform/module/common/util"
 )
 
 // Stage ///////////////////////////////////////////////////////////////////////
@@ -58,7 +58,7 @@ func (s *Stage) Up(ctx context.Context) error {
   autd, err := s.alreadyUpToDate("up")
 	if err != nil { return err }
 	if autd {
-    slog.Info("stage up skipping, already up to date", "stage", s.Name)
+    fmt.Printf("[stage=%v] skipping up, already up to date\n", s.Name)
     return nil
   }
 
@@ -96,7 +96,10 @@ func (s *Stage) alreadyUpToDate(command string) (bool, error) {
   if err != nil { return false, err }
   configFileInfo, err := os.Stat(s.globe.Config.Orchestrator.ConfigJsonFile)
   if err != nil { return false, err }
-  return stateFileInfo.ModTime().After(configFileInfo.ModTime()), nil
+  if configFileInfo.ModTime().After(stateFileInfo.ModTime()) {
+    return false, nil
+  }
+  return true, nil
 }
 
 func (s *Stage) stampDir() string {

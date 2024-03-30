@@ -1,4 +1,4 @@
-module github.com/elevationtools/anyform
+module github.com/elevationtools/anyform/module
 
 go 1.20
 
