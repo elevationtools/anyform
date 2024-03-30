@@ -119,7 +119,6 @@ func (orc* Orchestrator) Up(ctx context.Context) error {
 }
 
 func (orc* Orchestrator) Down(ctx context.Context) error {
-  panic("TODO: not implemented properly, needs to write config json file if out of date")
   dag := daglib.NewDag()
 
   for _, iStage := range orc.Stages {

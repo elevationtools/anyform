@@ -56,9 +56,15 @@ func NewStage(name string, globe *Globe,
 func (s *Stage) Up(ctx context.Context) error {
 	slog.Info("stage up starting", "stage", s.Name)
   autd, err := s.alreadyUpToDate("up")
-	if err != nil { return err }
-	if autd {
-    fmt.Printf("[stage=%v] skipping up, already up to date\n", s.Name)
+	if err != nil {
+		// Ignore errors here because all stages must be idempotent and maybe the
+		// error is recoverable
+		fmt.Fprintf(os.Stderr,
+			 "[stage=%v] warning: unable to determine if operation is already done," +
+			 " assuming it's not: %v\n",
+				s.Name, err)
+	} else if autd {
+    fmt.Printf("[stage=%v] skipping 'up', already up to date\n", s.Name)
     return nil
   }
 
@@ -150,9 +156,26 @@ func (s *Stage) RunCmd(ctx context.Context, ctlArg string) error {
 func (s *Stage) Down(ctx context.Context) error {
   slog.Info("stage down starting", "stage", s.Name)
 
-  err := s.RunCmd(ctx, "down")
+  autd, err := s.alreadyUpToDate("down")
+	if err != nil {
+		// Ignore errors here because all stages must be idempotent and maybe the
+		// error is recoverable
+		fmt.Fprintf(os.Stderr,
+			 "[stage=%v] warning: unable to determine if operation is already done," +
+			 " assuming it's not: %v\n",
+				s.Name, err)
+	} else if autd {
+    fmt.Printf("[stage=%v] skipping 'down', already done\n", s.Name)
+    return nil
+  }
+
+  err = s.RunCmd(ctx, "down")
   if err != nil { return err }
 
+  err = commonutil.ToJSONFile(StageStateFile{LastCommand: "down"},
+                              s.stateFilePath)
+  if err != nil { return fmt.Errorf("writing %v: %w", s.stateFilePath, err) }
+ 
   slog.Info("stage down done", "stage", s.Name)
   return nil
 }
