@@ -6,7 +6,7 @@ activate_anyform_repo_sh() {
     echo "REPO_ROOT must already be set"
     exit 1
   fi
-  export PATH="$REPO_ROOT/cli/genfiles/bin:$REPO_ROOT/deps/bin:$PATH"
+  export PATH="$REPO_ROOT/module/cli/genfiles/bin:$REPO_ROOT/deps/bin:$PATH"
   export GOROOT="$REPO_ROOT/deps/golang/genfiles/go"
   export GOPATH="$REPO_ROOT/deps/gopath"
   export MAKO_ROOT="$REPO_ROOT/deps/mako/lib"

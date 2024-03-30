@@ -3,7 +3,7 @@ include $(MAKO_ROOT)/util.mk
 
 define DEPS
 	$(REPO_ROOT)/deps/jsonnet
-	$(REPO_ROOT)/cli
+	$(REPO_ROOT)/module/cli
 endef
 
 ifeq "$(MAKO_STAGE)" "main"

@@ -6,7 +6,7 @@ export REPO_ROOT := $(CURDIR)
 build: cli/genfiles/anyform
 
 cli/genfiles/anyform: $(shell find cli lib -name genfiles -prune -o -print)
-	. ./activate.sh && mako -C cli
+	. ./activate.sh && mako -C module/cli
 	
 .PHONY: examples_basic
 examples_basic:
