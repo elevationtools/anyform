@@ -1,4 +1,4 @@
-
+// Not currently in use. Can probably be removed.
 package anyform
 
 import (

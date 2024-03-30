@@ -27,8 +27,13 @@ func FromJSONBytes[T any](jsonBytes []byte, out T) error {
   return json.Unmarshal(jsonBytes, out)
 }
 
+func FromJSONString[T any](jsonString string, out T) error {
+  return FromJSONBytes([]byte(jsonString), out)
+}
+
 func FromJSONFile[T any](filePath string, out T) error {
 	data, err := os.ReadFile(filePath) 
 	if err != nil { return err }
 	return FromJSONBytes(data, out)
 }
+

@@ -38,7 +38,7 @@ func NewDefaultGlobe() *Globe {
 	globe := &Globe{}
 	globe.Config = NewDefaultAnyformConfig()
 	globe.StageStamper = NewGomplateCliStageStamper(globe)
-	globe.ConfigLoader = NewJsonnetCliConfigLoader(globe)
+	globe.ConfigLoader = NewJsonnetLibConfigLoader(globe)
 	globe.SubprocessRunner = NewDefaultSubprocessRunner(globe)
 	return globe
 }
