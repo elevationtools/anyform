@@ -50,7 +50,7 @@ func NewOrchestrator(globe *Globe) (*Orchestrator, error) {
       dep, found := orc.Stages[depName]
       if !found {
         return nil, fmt.Errorf(
-          "Invalid spec: stage %v depends on undefined stage %v", stage.Name, depName)
+          "invalid DAG: stage %v depends on undefined stage %v", stage.Name, depName)
       }
       stage.DependsOn = append(stage.DependsOn, dep)
       dep.RequiredBy = append(dep.RequiredBy, stage)

@@ -70,7 +70,7 @@ func (s *Stage) Up(ctx context.Context) error {
     return nil
   }
 
-  err = s.Stamp()
+  err = s.Stamp(ctx)
   if err != nil {
     slog.Warn("stage up stamping failed", "stage", s.Name, "error", err)
     return err
@@ -138,12 +138,12 @@ func (s *Stage) stampDir() string {
   return filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "stamp")
 }
 
-func (s *Stage) Stamp() error {
+func (s *Stage) Stamp(ctx context.Context) error {
   slog.Debug("stage stamping", "stage", s.Name)
   stampDir := s.stampDir()
    err := os.MkdirAll(stampDir, 0750)
   if err != nil { return fmt.Errorf("mkdir -p '%v': %w", stampDir, err) }
-  return s.globe.StageStamper.Stamp(s.stageImplDir, stampDir)
+  return s.globe.StageStamper.Stamp(ctx, s.stageImplDir, stampDir)
 }
 
 func AbsJoin(elem ...string) string {

@@ -1,22 +1,18 @@
 
 ## Current State
 
-just finished: stage "up" checks if `ANYFORM_CONFIG_JSON_FILE` is newer than the state
-file and that the last command was actually "up".  state file is a JSON file
-called `genfiles/stage_name/state`.
-
-need to:
-- not always update the `ANYFORM_CONFIG_JSON_FILE` by checking the jsonnet-deps
-  (or byte fingerprint) of the `AnyConfig.OrcherstratorSpecFile.`.
-- check the `ANYFORM_IMPL_DIR/stage_name/*` modified times for the stage and all
-  its parents.
+just finished implementing skipping of already done operations.
 
 ## Todos
 
-- Avoid redoing work that doesn't need to be done, GNU Make style or via
-  checksums.
-  - Important: DAG children impl or output changing shouldn't cause parents to
-    rerun.
+- Automatic cross platform release creation using github actions.
+
+- Look into using gomplate as library rather than the CLI binary.
+
+- allow passing options to gomplate, per directory or even per file, to change
+  --left-delim --right-delim
+  - Or just move away from gomplate to configo and support that with configo
+    directly
 
 - Enable controlling parallelism, at a minimum full on and full off.
 
@@ -30,13 +26,12 @@ need to:
 - Consider creating the output dir and stage output dirs automatically so `ctl`
   scripts don't have to.
 
-- allow passing options to gomplate, per directory or even per file, to change
-  --left-delim --right-delim
-  - Or just move away from gomplate to configo and support that with configo
-    directly
-
 - Think about how to handle a stage calling a different orchestrator to support
   nested/modular anyforms.
 
 - Allow configuring a different command than just `./ctl up|down` for stages.
 
+- signal handling for subprocesses
+
+- Handle error output from StageStampers better (stdout/stderr for CLI based
+  ones)

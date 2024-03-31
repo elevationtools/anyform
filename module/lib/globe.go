@@ -12,16 +12,26 @@
 package anyform
 
 import (
+	"context"
 	"os/exec"
 )
 
+// TODO: add context.Context to all (most?) interfaces here.
+
 type ConfigLoader interface {
+	// Load inputFilePath into out (which should obviously be a pointer type).
 	Load(inputFilePath string, out any) error
+	// Returns inputFilePath and all of its transitive dependencies.  The max
+	// modification time of this list is used to determine if anything has changed
+	// since the last run.
   GetTransitiveDeps(inputFilePath string) ([]string, error)
 }
 
+// inputDir and outputDir can be relative paths.
+// Implementations must set PWD=inputDir during template evaluation, which means
+// other paths (like outputDir) may need to be converted to absolute paths.
 type StageStamper interface {
-  Stamp(inputDir string, outputDir string) error
+  Stamp(ctx context.Context, inputDir string, outputDir string) error
 }
 
 type SubprocessRunner interface {
