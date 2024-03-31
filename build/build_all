@@ -1,34 +1,44 @@
 #!/usr/bin/env bash
+#
+# To use this script, first "docker login" to the CONTAINER_REGISTRY.
 set -euo pipefail
 
-: ${VERSION:?}
+cd "$(dirname "$(readlink -f "$0")")"
+
+: ${VERSION:=local}
+: ${CONTAINER_REGISTRY:=ghcr.io/elevationtools}
 
 mkdir -p genfiles genfiles/bin_unversioned genfiles/bin
 
-cd "$(dirname "$(readlink -f "$0")")"
-rm -f genfiles/image_id genfiles/container_id || true
-docker build --iidfile genfiles/image_id -f ./Dockerfile ..
-docker create --cidfile genfiles/container_id "$(< genfiles/image_id)"
+image_repo="$CONTAINER_REGISTRY/anyform"
+
+# build image
+docker buildx build -t "$image_repo:latest" --push \
+  --cache-from "type=registry,ref=${image_repo}:cache" \
+  --cache-to "type=registry,ref=${image_repo}:cache,mode=max" \
+  -f ./Dockerfile ..
+
+# copy built binaries out of image by creating a dummy container
+rm -f genfiles/container_id || true
+docker create --cidfile genfiles/container_id "$image_repo:latest"
 docker cp \
   "$(< genfiles/container_id):/anyform/module/cli/genfiles/bin/." \
 	./genfiles/bin_unversioned
 docker rm "$(< genfiles/container_id)"
-docker image rm "$(< genfiles/image_id)"
-rm genfiles/container_id genfiles/image_id
+rm -f genfiles/container_id || true
 
+# rename output binaries with "VERSION" and exe for windows.
 (
 	cd genfiles/bin_unversioned
 	for x in anyform-*; do
 		mv "$x" "../bin/$x-$VERSION"
 	done
 )
-
 (
   cd genfiles/bin
   for x in anyform-windows-*; do
     mv "$x" "${x}.exe"
   done
 )
-
 rm -rf genfiles/bin_unversioned
 
