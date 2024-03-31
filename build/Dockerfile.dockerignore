@@ -1,4 +1,5 @@
 
-**/genfiles
-/deps/gopath/pkg
+.git/
+**/genfiles/
+deps/gopath/pkg/
 
