@@ -1,0 +1,41 @@
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+name: Build and release
+
+jobs:
+  build:
+    name: Build and create release
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+
+      - name: Setup machine
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get -y update
+          sudo apt-get -y install git curl make docker-ce
+
+      - name: Checkout main repo
+        uses: actions/checkout@v2
+
+      - name: Checkout submodules
+        run: |
+          git submodule update --init --recursive
+
+      - name: Cross compile in docker container
+        run: |
+          . activate.bash
+          VERSION="${{ github.ref_name }}" mako -C build
+
+      - name: Create release
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GH_REPO: "${{ github.repository }}"
+        run: |
+          gh release create ${{ github.ref_name }} ./build/genfiles/bin/anyform-*
+

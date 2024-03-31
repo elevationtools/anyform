@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: ${VERSION:?}
+
+mkdir -p genfiles genfiles/bin_unversioned genfiles/bin
+
+cd "$(dirname "$(readlink -f "$0")")"
+rm -f genfiles/image_id genfiles/container_id || true
+docker build --iidfile genfiles/image_id -f ./Dockerfile ..
+docker create --cidfile genfiles/container_id "$(< genfiles/image_id)"
+docker cp \
+  "$(< genfiles/container_id):/anyform/module/cli/genfiles/bin/." \
+	./genfiles/bin_unversioned
+docker rm "$(< genfiles/container_id)"
+docker image rm "$(< genfiles/image_id)"
+rm genfiles/container_id genfiles/image_id
+
+(
+	cd genfiles/bin_unversioned
+	for x in anyform-*; do
+		mv "$x" "../bin/$x-$VERSION"
+	done
+)
+
+(
+  cd genfiles/bin
+  for x in anyform-windows-*; do
+    mv "$x" "${x}.exe"
+  done
+)
+
+rm -rf genfiles/bin_unversioned
+

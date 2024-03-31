@@ -1,0 +1,3 @@
+[submodule "deps/mako"]
+	path = deps/mako
+	url = https://github.com/elevationtools/mako
