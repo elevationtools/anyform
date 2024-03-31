@@ -42,5 +42,5 @@ jobs:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GH_REPO: "${{ github.repository }}"
         run: |
-          gh release create ${{ github.ref_name }} ./build/genfiles/bin/anyform-*
+          gh release create --verify-tag ${{ github.ref_name }} ./build/genfiles/bin/anyform-*
 
