@@ -17,7 +17,7 @@ test:
 endif
 
 clean:
-	-rm -rf prod/*/genfiles
+	-rm -rf prod/*/genfiles prod/*/output
 
 include $(MAKO_ROOT)/component.mk
 
