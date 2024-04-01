@@ -27,18 +27,18 @@ func NewDefaultSubprocessRunner(globe *Globe) *DefaultSubprocessRunner {
 func (dc *DefaultSubprocessRunner) RunCmd(
     label string, cmd *exec.Cmd, logDir string) error {
 	err := os.MkdirAll(logDir, 0750)
-	if err != nil { return fmt.Errorf("mkdir -p '%v': %w", logDir, err) }
+	if err != nil { return Errorf("mkdir -p '%v': %w", logDir, err) }
 	logFilePath := filepath.Join(logDir, "stdout_stderr")
 	logFile, err := os.Create(logFilePath)
-	if err != nil { return fmt.Errorf("creating log file '%v': %w", logFilePath, err) }
+	if err != nil { return Errorf("creating log file '%v': %w", logFilePath, err) }
 
 	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil { return fmt.Errorf("creating stdout pipe: %w", err) }
+	if err != nil { return Errorf("creating stdout pipe: %w", err) }
 	stderrPipe, err := cmd.StderrPipe()
-	if err != nil { return fmt.Errorf("creating stderr pipe: %w", err) }
+	if err != nil { return Errorf("creating stderr pipe: %w", err) }
 
 	err = cmd.Start()
-	if err != nil { return fmt.Errorf("starting subprocess: %w", err) }
+	if err != nil { return Errorf("starting subprocess: %w", err) }
 
 	// Relay subprocess's stdout and stderr to this process's stdout and the logfile.
 	var wg sync.WaitGroup
@@ -48,10 +48,10 @@ func (dc *DefaultSubprocessRunner) RunCmd(
 	go dc.relayStream(label, "stderr", stderrPipe, os.Stderr, logFile, &stderrErr, &wg)
 	wg.Wait()
 
-	if stdoutErr != nil { return fmt.Errorf("relaying stdout: %w", stdoutErr) }
-	if stderrErr != nil { return fmt.Errorf("relaying stderr: %w", stderrErr) }
+	if stdoutErr != nil { return Errorf("relaying stdout: %w", stdoutErr) }
+	if stderrErr != nil { return Errorf("relaying stderr: %w", stderrErr) }
 	err = cmd.Wait()
-	if err != nil { return fmt.Errorf("running subprocess: %w", err) }
+	if err != nil { return Errorf("running subprocess: %w", err) }
 
   return nil
 }

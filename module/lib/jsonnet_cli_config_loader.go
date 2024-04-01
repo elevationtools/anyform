@@ -2,7 +2,6 @@
 package anyform
 
 import (
-	"fmt"
 	"os/exec"
 
 	"github.com/elevationtools/anyform/module/common/util"
@@ -20,7 +19,7 @@ func (jc *JsonnetCliConfigLoader) Load(inputFilePath string, out any) error {
   outBytes, err := exec.Command(jc.globe.Config.Jsonnet, inputFilePath).
 			CombinedOutput()
   if err != nil {
-    return fmt.Errorf("Error(%w) output: %v", err, string(outBytes))
+    return Errorf("Error(%w) output: %v", err, string(outBytes))
   }
   return util.FromJSONBytes(outBytes, out)
 }

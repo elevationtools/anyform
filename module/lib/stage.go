@@ -55,7 +55,17 @@ func NewStage(name string, globe *Globe,
   return s
 }
 
+// Wrap UpImpl so that all errors can be captured and displayed.  The DAG
+// swallows errors so they need to be displayed here.
 func (s *Stage) Up(ctx context.Context) error {
+	err := s.UpImpl(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[stage=%v] failed: %v", s.Name, err)
+	}
+	return err
+}
+
+func (s *Stage) UpImpl(ctx context.Context) error {
 	slog.Info("stage up starting", "stage", s.Name)
   autd, err := s.alreadyUpToDate("up")
 	if err != nil {
@@ -84,7 +94,7 @@ func (s *Stage) Up(ctx context.Context) error {
 
   err = commonutil.ToJSONFile(StageStateFile{LastCommand: "up"},
                               s.stateFilePath)
-  if err != nil { return fmt.Errorf("writing %v: %w", s.stateFilePath, err) }
+  if err != nil { return Errorf("writing %v: %w", s.stateFilePath, err) }
   
   slog.Info("stage up done", "stage", s.Name)
   return nil
@@ -142,7 +152,7 @@ func (s *Stage) Stamp(ctx context.Context) error {
   slog.Debug("stage stamping", "stage", s.Name)
   stampDir := s.stampDir()
    err := os.MkdirAll(stampDir, 0750)
-  if err != nil { return fmt.Errorf("mkdir -p '%v': %w", stampDir, err) }
+  if err != nil { return Errorf("mkdir -p '%v': %w", stampDir, err) }
   return s.globe.StageStamper.Stamp(ctx, s.stageImplDir, stampDir)
 }
 
@@ -172,7 +182,7 @@ func (s *Stage) RunCmd(ctx context.Context, ctlArg string) error {
   err := s.globe.SubprocessRunner.RunCmd(
       "stage=" + s.Name, cmd, filepath.Join(
       s.globe.Config.Orchestrator.GenfilesDir, s.Name, "logs"))
-  if err != nil { return fmt.Errorf("stage %v: %w", s.Name, err) }
+  if err != nil { return Errorf("stage %v: %w", s.Name, err) }
 
   slog.Debug(logStr + " completed", "stage", s.Name)
   return nil
@@ -199,7 +209,7 @@ func (s *Stage) Down(ctx context.Context) error {
 
   err = commonutil.ToJSONFile(StageStateFile{LastCommand: "down"},
                               s.stateFilePath)
-  if err != nil { return fmt.Errorf("writing %v: %w", s.stateFilePath, err) }
+  if err != nil { return Errorf("writing %v: %w", s.stateFilePath, err) }
  
   slog.Info("stage down done", "stage", s.Name)
   return nil

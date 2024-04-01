@@ -134,7 +134,20 @@ func (dag *Dag) Run(ctx context.Context) error {
 		case <- ctx.Done(): return ctx.Err()
 		case <- dag.done:
 	}
+
+	if len(dag.failed) > 0 {
+		return fmt.Errorf("verticies failed: %v", dag.FailedVerticies())
+	}
 	return nil
+}
+
+// Returns empty if no failures.
+func (dag *Dag) FailedVerticies() []string {
+	names := []string{}
+	for _, v := range dag.failed {
+		names = append(names, v.name)
+	}
+	return names
 }
 
 // Returns nil if there is no cycle.

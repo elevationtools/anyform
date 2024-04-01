@@ -19,4 +19,6 @@ type VertexRunFunc = func(ctx context.Context) error
 type Dag interface {
   AddVertex(name string, childNames []string, runFunc VertexRunFunc) error
   Run(ctx context.Context) error
+	// TODO: add ability to see the errors.
+	FailedVerticies() []string
 }

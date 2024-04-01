@@ -9,10 +9,12 @@ import (
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "Run the up DAG.",
+	SilenceUsage: true,
+	SilenceErrors: true,
 	// Long: "",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
     orc := Must(AnyformSingleton().NewOrchestrator())
-		Must1(orc.Up(context.Background()))
+		return orc.Up(context.Background())
 	},
 }
 

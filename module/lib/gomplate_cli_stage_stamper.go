@@ -3,7 +3,6 @@ package anyform
 
 import (
 	"context"
-  "fmt"
 	"os"
   "os/exec"
 	"path/filepath"
@@ -35,7 +34,7 @@ func (gc *GomplateCliStageStamper) Stamp(
 
   outBytes, err := cmd.CombinedOutput()
   if err != nil {
-    return fmt.Errorf("Error(%w) output: %v", err, string(outBytes))
+    return Errorf("Error(%w) output: %v", err, string(outBytes))
   }
 	return nil
 }

@@ -2,7 +2,6 @@ package anyform
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -49,7 +48,7 @@ func NewOrchestrator(globe *Globe) (*Orchestrator, error) {
     for _, depName := range stage.spec.DependsOn {
       dep, found := orc.Stages[depName]
       if !found {
-        return nil, fmt.Errorf(
+        return nil, Errorf(
           "invalid DAG: stage %v depends on undefined stage %v", stage.Name, depName)
       }
       stage.DependsOn = append(stage.DependsOn, dep)
@@ -69,7 +68,7 @@ func (orc* Orchestrator) MaybeUpdateConfigJsonFile() error {
   for _, f := range depFiles {
     info, err := os.Stat(f)
     if err != nil {
-			return fmt.Errorf("Stat()ing config file '%v': %w", f, err)
+			return Errorf("Stat()ing config file '%v': %w", f, err)
 		}
 		modTime := info.ModTime()
 		if modTime.After(configsMaxModTime) { configsMaxModTime = modTime }
@@ -78,23 +77,22 @@ func (orc* Orchestrator) MaybeUpdateConfigJsonFile() error {
 	jsonFilePath := orc.globe.Config.Orchestrator.ConfigJsonFile
 	jsonFileInfo, err := os.Stat(jsonFilePath)
 	if err != nil {
-		return fmt.Errorf("Stat()ing config JSON file '%v': %w", jsonFilePath, err)
-	}
-
-	if !configsMaxModTime.After(jsonFileInfo.ModTime()) {
+		// Ignore because the file might just be missing, and if it's not perhaps
+		// assuming it's missing and overwriting it will solve the problem.
+	} else if !configsMaxModTime.After(jsonFileInfo.ModTime()) {
 		slog.Debug("config json file already up to date")
 		return nil
 	}
 
 	jsonString, err := util.ToJSONString(orc.Spec.InnerCfg)
-	if err != nil { return fmt.Errorf("converting InnerCfg to JSON: %w", err) }
+	if err != nil { return Errorf("converting InnerCfg to JSON: %w", err) }
 
 	dir := filepath.Dir(jsonFilePath)
 	err = os.MkdirAll(dir, 0750)
-	if err != nil { return fmt.Errorf("mkdir -p %v: %w", dir, err) }
+	if err != nil { return Errorf("mkdir -p %v: %w", dir, err) }
 	
 	err = os.WriteFile(jsonFilePath, []byte(jsonString), 0660)
-	if err != nil { return fmt.Errorf("writing %v: %w", jsonFilePath, err) }
+	if err != nil { return Errorf("writing %v: %w", jsonFilePath, err) }
 
 	return nil
 }
@@ -140,4 +138,3 @@ func (orc* Orchestrator) Down(ctx context.Context) error {
 func (orc* Orchestrator) Clean(ctx context.Context) error {
   return os.RemoveAll(orc.globe.Config.Orchestrator.GenfilesDir)
 }
-

@@ -8,7 +8,6 @@ package anyform
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -32,7 +31,7 @@ func (gc *GomplateLibStageStamper) Stamp(
 	if err == nil {
 		defer configFile.Close()
 		cfg, err = gomplateconfig.Parse(configFile)
-		if err != nil { return fmt.Errorf("Parsing .gomplate.yml: %w", err) }
+		if err != nil { return Errorf("Parsing .gomplate.yml: %w", err) }
 	} else {
 		cfg = &gomplateconfig.Config{}
 		cfg.ApplyDefaults()

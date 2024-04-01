@@ -2,7 +2,6 @@
 package anyform
 
 import (
-	"fmt"
   "os"
   "path/filepath"
 
@@ -31,7 +30,7 @@ func NewJsonnetLibConfigLoader(globe *Globe) *JsonnetLibConfigLoader {
 
 func (jl *JsonnetLibConfigLoader) Load(inputFilePath string, out any) error {
   jsonString, err := jl.vm.EvaluateFile(inputFilePath)
-  if err != nil { return fmt.Errorf("jsonnet EvaluateFile: %w", err) }
+  if err != nil { return Errorf("jsonnet EvaluateFile: %w", err) }
   return util.FromJSONString(jsonString, out)
 }
 
@@ -39,6 +38,6 @@ func (jl *JsonnetLibConfigLoader) Load(inputFilePath string, out any) error {
 // inputFilePath.
 func (jl *JsonnetLibConfigLoader) GetTransitiveDeps(inputFilePath string) ([]string, error) {
   paths, err := jl.vm.FindDependencies("", []string{inputFilePath})
-  if err != nil { return nil, fmt.Errorf("jsonnet GetTransitiveDeps: %w", err) }
+  if err != nil { return nil, Errorf("jsonnet GetTransitiveDeps: %w", err) }
   return append(paths, inputFilePath), nil
 }

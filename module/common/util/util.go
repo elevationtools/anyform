@@ -2,8 +2,8 @@
 package util
 
 import (
-	"os"
 	"encoding/json"
+	"os"
 )
 
 func ToJSONBytes(value any) ([]byte, error) {
@@ -36,4 +36,3 @@ func FromJSONFile[T any](filePath string, out T) error {
 	if err != nil { return err }
 	return FromJSONBytes(data, out)
 }
-

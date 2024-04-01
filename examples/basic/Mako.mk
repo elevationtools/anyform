@@ -26,8 +26,10 @@ down:
 spec:
 	cd prod/tuesday && anyform spec
 	
-
 endif
+
+clean:
+	-rm -rf prod/*/genfiles
 
 include $(MAKO_ROOT)/component.mk
 
