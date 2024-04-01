@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#
+# If CONTAINER_REGISTRY is set and doesn't equal "none", the following must be
+# done before running this script:
+# - create a buildx builder
+#   (i.e. "docker buildx create --driver=... --use --bootstrap")
+# - Login to the registry (i.e. "docker login ...")
+set -euo pipefail
+
+cd "$(dirname "$(readlink -f "$0")")"
+
+
+function main() {
+  : ${VERSION:=local}
+  : ${CONTAINER_REGISTRY:=none}
+
+  mkdir -p genfiles genfiles/bin_unversioned genfiles/bin
+
+
+  # build image
+  local image_repo
+  if [[ "$CONTAINER_REGISTRY" == "" || \
+        "$CONTAINER_REGISTRY" == "none" ]]; then
+    image_repo="local/anyform"
+    docker build -t "$image_repo:latest" -f ./Dockerfile ..
+  else
+    image_repo="$CONTAINER_REGISTRY/anyform"
+    docker buildx build -t "$image_repo:latest" --push \
+      --cache-from "type=registry,ref=${image_repo}:cache" \
+      --cache-to "type=registry,ref=${image_repo}:cache,mode=max" \
+      -f ./Dockerfile ..
+  fi
+
+  # copy built binaries out of image by creating a dummy container
+  rm -f genfiles/container_id || true
+  docker create --cidfile genfiles/container_id "$image_repo:latest"
+  docker cp \
+    "$(< genfiles/container_id):/anyform/module/cli/genfiles/bin/." \
+    ./genfiles/bin_unversioned
+  docker rm "$(< genfiles/container_id)"
+  rm -f genfiles/container_id || true
+
+  # rename output binaries with "VERSION" and exe for windows.
+  (
+    cd genfiles/bin_unversioned
+    for x in anyform-*; do
+      mv "$x" "../bin/$x-$VERSION"
+    done
+  )
+  (
+    cd genfiles/bin
+    for x in anyform-windows-*; do
+      mv "$x" "${x}.exe"
+    done
+  )
+  rm -rf genfiles/bin_unversioned
+}
+
+main "$@"
+

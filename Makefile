@@ -17,7 +17,7 @@ build: submodules
 # Build within a docker container.
 .PHONY: docker_build
 docker_build: submodules
-	. ./activate.sh && mako -C build
+	. ./activate.sh && mako -C build local
 
 .PHONY: examples_basic
 examples_basic: submodules
@@ -25,6 +25,7 @@ examples_basic: submodules
 
 .PHONY: clean
 clean:
+	-chmod -R u+w deps/gopath  # Annoyingly needed to be able to "rm -rf"
 	rm -rf $(shell find . -name genfiles -type d -prune -print)
 	git submodule deinit --all
 

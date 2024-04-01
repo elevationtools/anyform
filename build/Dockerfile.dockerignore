@@ -1,5 +1,9 @@
 
-.git/
-**/genfiles/
-deps/gopath/pkg/
+*
+!Makefile
+!activate.sh
+!deps/
+!module/
+
+**/genfiles
 

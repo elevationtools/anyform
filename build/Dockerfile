@@ -16,9 +16,9 @@ WORKDIR "$REPO_ROOT"
 
 # Deps first to utilize the layer cache.
 COPY /deps/ ./deps/
-COPY /Makefile /activate.sh .
+COPY /Makefile /activate.sh ./
 RUN mako -C ./deps/golang
 
 COPY /module ./module
-RUN mako -C ./module/cli all
+RUN mako -C ./module/cli all_platforms
 

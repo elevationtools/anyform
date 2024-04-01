@@ -8,8 +8,12 @@ endef
 
 ifeq "$(MAKO_STAGE)" "main"
 
-#DEFAULT_TARGETS := smoketest
-#DEFAULT_PREREQS :=
+DEFAULT_TARGETS := help
+DEFAULT_PREREQS :=
+.PHONY: help
+help:
+	@echo "Targets: up down spec"
+
 .PHONY: up
 up:
 	cd prod/tuesday && anyform up
@@ -25,5 +29,5 @@ spec:
 
 endif
 
-include $(MAKO_ROOT)/base.mk
+include $(MAKO_ROOT)/component.mk
 

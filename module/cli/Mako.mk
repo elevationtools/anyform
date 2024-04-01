@@ -20,7 +20,7 @@ define os_arch_target_impl
 genfiles/bin/anyform-$(1)-$(2): genfiles/bin/anyform | genfiles/bin
 	GOOS=$(1) GOARCH=$(2) go build -o $$@ .
 
-all: genfiles/bin/anyform-$(1)-$(2)
+all_platforms: genfiles/bin/anyform-$(1)-$(2)
 endef
 os_arch_target = $(eval $(call os_arch_target_impl,$(1),$(2)))
 

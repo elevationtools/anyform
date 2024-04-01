@@ -1,1 +1,1 @@
-../gopath/bin/jsonnet-lint
+../gopath/genfiles/bin/jsonnet-lint
