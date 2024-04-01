@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$(readlink -f "$0")")"
+
+source ./test_util.bash
+
+function main() {
+  export EATER_NAME="HungryGuy"
+  # All "prod/tuesday"
+  runtest CliStdout
+  runtest CliStdoutStderrCombination
+  # The following use the output of the above.
+  runtest LogStageShop
+  runtest LogStageCookCurry
+  runtest LogStageCookRice
+  runtest LogStageEat
+  runtest OutputStageShop
+  runtest OutputStageCookCurry
+  runtest OutputStageCookRice
+  runtest OutputStageEat
+
+  export EATER_NAME="SpiceLover"
+  # Now a quick check of "prod/friday"
+  runtest FridayCliStdoutStderrCombination
+  runtest FridayOutputStageEat
+
+	# TODO: test commands down and spec.
+}
+
+function CliStdout() {
+  rm -rf $(find ./prod/tuesday -name genfiles -prune -print)
+  expect_stripped_eq_stdin \
+    "$(cd prod/tuesday; anyform up 2>/dev/null)" \
+    <<EOF
+stage=shop] Walking to the store
+stage=shop] Filling up the cart
+stage=shop] Pay for everything
+stage=shop] Head home
+stage=cook_rice] Cooking up the rice
+stage=cook_rice] Rice is done
+stage=cook_curry] Cooking up the curry
+stage=cook_curry] Curry is done
+stage=eat] Nom nom nom
+stage=eat] Yum
+EOF
+}
+
+# Checks that the relative ordering of stdout and stderr is correct.
+# TODO: This test fails without the hack in ./lib/dinner/cook_curry/ctl because
+# of the issue in //lib/subprocess_runner.go  See STDOUT_STDERR_ORDER_ISSUE in
+# both those files.
+function CliStdoutStderrCombination() {
+  rm -rf $(find ./prod/tuesday -name genfiles -prune -print)
+  expect_stripped_eq_stdin \
+      "$(cd prod/tuesday; anyform up 2>&1)" \
+      <<EOF
+stage=shop] Walking to the store
+stage=shop] Filling up the cart
+stage=shop] Pay for everything
+stage=shop] Head home
+stage=cook_rice] Cooking up the rice
+stage=cook_rice] Rice is done
+stage=cook_curry] Cooking up the curry
+stage=cook_curry] Oh no! Forgot the galangal!...
+stage=cook_curry] Curry is done
+stage=eat] Nom nom nom
+stage=eat] Yum
+EOF
+}
+
+function LogStageShop() {
+  expect_stripped_eq_stdin \
+      "$(< ./prod/tuesday/genfiles/shop/logs/stdout_stderr)" \
+      <<EOF
+stdout] Walking to the store
+stdout] Filling up the cart
+stdout] Pay for everything
+stdout] Head home
+EOF
+}
+
+function LogStageCookCurry() {
+  expect_stripped_eq_stdin \
+      "$(< ./prod/tuesday/genfiles/cook_curry/logs/stdout_stderr)" \
+      <<EOF
+stdout] Cooking up the curry
+stderr] Oh no! Forgot the galangal!...
+stdout] Curry is done
+EOF
+}
+
+function LogStageCookRice() {
+  expect_stripped_eq_stdin \
+      "$(< ./prod/tuesday/genfiles/cook_rice/logs/stdout_stderr)" \
+      <<EOF
+stdout] Cooking up the rice
+stdout] Rice is done
+EOF
+}
+
+function LogStageEat() {
+  expect_stripped_eq_stdin \
+      "$(< ./prod/tuesday/genfiles/eat/logs/stdout_stderr)" \
+      <<EOF
+stdout] Nom nom nom
+stdout] Yum
+EOF
+}
+
+function OutputStageShop() {
+  expect_json_eq_stdin "$(< ./prod/tuesday/output/shop/output.json)" <<EOF
+{
+  "vegetables": [
+    "eggplant",
+    "lemongrass"
+  ],
+  "rice": "jasmin"
+}
+EOF
+}
+
+function OutputStageCookCurry() {
+  expect_eq_stdin "$(< ./prod/tuesday/output/cook_curry/output.txt)" <<EOF
+simmering eggplant, lemongrass in red curry
+EOF
+}
+
+function OutputStageCookRice() {
+  expect_eq_stdin "$(< ./prod/tuesday/output/cook_rice/output.txt)" <<EOF
+boiling "jasmin" rice
+EOF
+}
+
+function OutputStageEat() {
+  expect_eq_stdin "$(< ./prod/tuesday/output/nomnom.txt)" <<EOF
+Eating a tuesday night dinner prepped by:
+  boiling "jasmin" rice
+  simmering eggplant, lemongrass in red curry
+$EATER_NAME says yum yum!
+EOF
+}
+
+function FridayCliStdoutStderrCombination() {
+  rm -rf $(find ./prod/friday -name genfiles -prune -print)
+  expect_stripped_eq_stdin \
+      "$(cd prod/friday; anyform up 2>&1)" \
+      <<EOF
+stage=shop] Walking to the store
+stage=shop] Filling up the cart
+stage=shop] Pay for everything
+stage=shop] Head home
+stage=cook_rice] Cooking up the rice
+stage=cook_rice] Rice is done
+stage=cook_curry] Cooking up the curry
+stage=cook_curry] Oh no! Forgot the galangal!...
+stage=cook_curry] Curry is done
+stage=eat] Nom nom nom
+stage=eat] Yum
+EOF
+}
+
+function FridayOutputStageEat() {
+  expect_eq_stdin "$(< ./prod/friday/output/nomnom.txt)" <<EOF
+Eating a friday night dinner prepped by:
+  boiling "jasmin" rice
+  simmering eggplant, lemongrass in green curry
+$EATER_NAME says yum yum!
+EOF
+}
+
+main "$@"
+

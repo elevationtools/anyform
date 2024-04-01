@@ -8,24 +8,12 @@ endef
 
 ifeq "$(MAKO_STAGE)" "main"
 
-DEFAULT_TARGETS := help
+DEFAULT_TARGETS := test
 DEFAULT_PREREQS :=
-.PHONY: help
-help:
-	@echo "Targets: up down spec"
+.PHONY: test
+test:
+	./run_tests
 
-.PHONY: up
-up:
-	cd prod/tuesday && anyform up
-
-.PHONY: down
-down:
-	cd prod/tuesday && anyform down
-
-.PHONY: spec
-spec:
-	cd prod/tuesday && anyform spec
-	
 endif
 
 clean:

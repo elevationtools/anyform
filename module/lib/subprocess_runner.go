@@ -40,7 +40,15 @@ func (dc *DefaultSubprocessRunner) RunCmd(
 	err = cmd.Start()
 	if err != nil { return Errorf("starting subprocess: %w", err) }
 
-	// Relay subprocess's stdout and stderr to this process's stdout and the logfile.
+	// Relay subprocess's stdout and stderr to this process's stdout and the
+	// logfile.
+  // TODO(bug): STDOUT_STDERR_ORDER_ISSUE This strategy can cause the relative
+  // order of stdout and stderr to get mixed up for writes that happen directly
+  // back-to-back.  This has been seen in the integration test where a bash
+  // script does two back-to-back echos to stdout and stderr. Another approach
+  // could be to use a single goroutine and select within it, but this may
+  // require significantly more code since the bufio Scanner probably couldn't
+  // be used.
 	var wg sync.WaitGroup
 	wg.Add(2)
 	var stdoutErr, stderrErr error

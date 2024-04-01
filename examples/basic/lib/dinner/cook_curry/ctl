@@ -4,7 +4,12 @@
 outfile="$ANYFORM_OUTPUT_DIR/$ANYFORM_STAGE_NAME/output.txt"
 
 function run_up() {
+  # Force cook_curry to start after cook_rice so that tests have a predictable
+  # order to check for.
+  sleep 0.5
   echo "Cooking up the curry"
+  sleep 0.1 # stderr and stdout can get reordered. See STDOUT_STDERR_ORDER_ISSUE
+            # in other files for details.
   echo "Oh no! Forgot the galangal!..." >&2
 
   local curry_type veggies

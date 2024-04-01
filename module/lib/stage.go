@@ -10,7 +10,7 @@ import (
   "path/filepath"
 	 "time"
 
-  commonutil "github.com/elevationtools/anyform/module/common/util"
+  "github.com/elevationtools/anyform/module/common/util"
 )
 
 // Stage ///////////////////////////////////////////////////////////////////////
@@ -92,8 +92,7 @@ func (s *Stage) UpImpl(ctx context.Context) error {
     return err
   }
 
-  err = commonutil.ToJSONFile(StageStateFile{LastCommand: "up"},
-                              s.stateFilePath)
+  err = util.ToJSONFile(StageStateFile{LastCommand: "up"}, s.stateFilePath)
   if err != nil { return Errorf("writing %v: %w", s.stateFilePath, err) }
   
   slog.Info("stage up done", "stage", s.Name)
@@ -107,8 +106,8 @@ func (s *Stage) UpImpl(ctx context.Context) error {
 // Always returns false on errors, which probably allows ignoring errors.
 func (s *Stage) alreadyUpToDate(command string) (bool, error) {
   var stateFile StageStateFile
-  err := commonutil.FromJSONFile(s.stateFilePath, &stateFile)
-  if err != nil { return false, err }
+  err := util.FromJSONFile(s.stateFilePath, &stateFile)
+  if err != nil && !os.IsNotExist(err) { return false, err }
   if stateFile.LastCommand != command { return false, nil }
   stateFileInfo, err := os.Stat(s.stateFilePath)
   if err != nil { return false, err }
@@ -207,8 +206,7 @@ func (s *Stage) Down(ctx context.Context) error {
   err = s.RunCmd(ctx, "down")
   if err != nil { return err }
 
-  err = commonutil.ToJSONFile(StageStateFile{LastCommand: "down"},
-                              s.stateFilePath)
+  err = util.ToJSONFile(StageStateFile{LastCommand: "down"}, s.stateFilePath)
   if err != nil { return Errorf("writing %v: %w", s.stateFilePath, err) }
  
   slog.Info("stage down done", "stage", s.Name)

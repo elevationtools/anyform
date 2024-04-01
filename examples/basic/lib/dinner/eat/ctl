@@ -16,7 +16,7 @@ function run_up() {
     # templating isn't needed here since we're in bash, but this is done here to
     # demonstrate the feature which is important in other languages (Terraform,
     # etc).
-    echo "{{ .Env.USER }} says yum yum!"
+    echo "{{ .Env.EATER_NAME }} says yum yum!"
   } > "$outfile"
 
   echo "Yum"
