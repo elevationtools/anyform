@@ -1,7 +1,32 @@
 
-## Todos
+# Anyform
 
-- Use tests in CI/CD
+- [Table of Contents](/README.md)
+
+## Future Work
+
+### Issues with `gomplate`
+
+Solving the following issues with `gomplate` would be helpful for Anyform
+
+- Calling templates in another file is awkward/boilerplate heavy.
+  ```golang
+  {{ $_ := file.Read "otherfile.gmp" | tpl }}
+  {{ tmpl.Exec "otherfiletmpl" (merge (dict "foo" "bar") .) }}
+  ```
+
+- `--input-dir` and `--output-dir` has problematic semantics.  One of these two
+  options would solve it:
+    - Option 1) Remove files in `--output-dir` that aren't in `--input-dir` to clean up
+      previous runs automatically without having to `rm -rf` the whole output dir.
+    - Option 2) Make the timestamps of the output files match the timestamps of
+      the input files.  This would allow `rm -rf` to work while not confusing
+      `make`'s timestamp checking.
+
+
+## Unorganized Todos
+
+- Use //tests in CI/CD
 
 - Improve error message for stage ctl script error and stamping error (e.g.
   `EATER_NAME` wasn't set, {{ Env.EATER_NAME }} barfed, and the error message is
