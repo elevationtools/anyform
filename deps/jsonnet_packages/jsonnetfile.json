@@ -8,7 +8,7 @@
           "subdir": "jsonnet_lib/anyform"
         }
       },
-      "version": "bb-jsonnetlib-testfixes"
+      "version": "7a5c977ca3ada858413b34adeae5d265775d8f61"
     }
   ],
   "legacyImports": true
