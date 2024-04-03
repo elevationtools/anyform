@@ -2,7 +2,9 @@
 include $(MAKO_ROOT)/util.mk
 
 define DEPS
+	$(REPO_ROOT)/deps/jq
 	$(REPO_ROOT)/deps/jsonnet
+	$(REPO_ROOT)/deps/jsonnet_packages
 	$(REPO_ROOT)/module/cli
 endef
 

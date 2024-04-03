@@ -4,6 +4,7 @@
 !activate.sh
 !deps/
 !module/
+!tests/
 
 **/genfiles
 

@@ -1,5 +1,5 @@
 
-include $(MAKO_ROOT)/dep.mk
+include $(MAKO_ROOT)/util.mk
 
 ifeq "$(MAKO_STAGE)" "main"
 
@@ -12,4 +12,6 @@ smoketest:
 	jsonnet-bundler --version 2>&1 | grep v0.5.1
 
 endif
+
+include $(MAKO_ROOT)/dep.mk
 

@@ -1,5 +1,5 @@
 
-include $(MAKO_ROOT)/dep.mk
+include $(MAKO_ROOT)/util.mk
 
 define DEPS
 	$(REPO_ROOT)/deps/golang
@@ -16,4 +16,6 @@ smoketest:
 	gomplate --version | grep 4.0.0-pre-2
 
 endif
+
+include $(MAKO_ROOT)/dep.mk
 

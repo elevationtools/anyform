@@ -12,12 +12,16 @@ help:
 
 ifeq "$(MAKO_STAGE)" "main"
 
-$(call mako_define_target, local, genfiles/local_done, Dockerfile* | genfiles)
+$(call mako_define_target, local, genfiles/local_done, \
+		build_all_platforms_via_docker Dockerfile* | genfiles)
 genfiles/local_done:
 	CONTAINER_REGISTRY=none ./build_all_platforms_via_docker
 	touch $@
 
-$(call mako_define_target, github, genfiles/github_done, Dockerfile* | genfiles)
+# Build using github ghcr.io for layer caching. The final image is pushed as
+# well, but not used.
+$(call mako_define_target, github, genfiles/github_done, \
+		build_all_platforms_via_docker Dockerfile* | genfiles)
 genfiles/github_done:
 	CONTAINER_REGISTRY=ghcr.io/elevationtools ./build_all_platforms_via_docker
 	touch $@

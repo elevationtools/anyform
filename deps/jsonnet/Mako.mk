@@ -1,5 +1,5 @@
 
-include $(MAKO_ROOT)/dep.mk
+include $(MAKO_ROOT)/util.mk
 
 define DEPS
 	$(REPO_ROOT)/deps/golang
@@ -20,4 +20,6 @@ smoketest:
 	jsonnet-lint -version | grep 0.20.0
 
 endif
+
+include $(MAKO_ROOT)/dep.mk
 

@@ -29,8 +29,8 @@ deps/mako/README.md:
 	git submodule update --init --recursive
 
 .PHONY: clean
-clean:
-	-chmod -R u+w deps/gopath  # Annoyingly needed to be able to "rm -rf"
+clean: submodules
+	for x in $(shell find . -name Mako.mk); do mako -C $$(dirname "$$x") clean; done
 	rm -rf $(shell find . -name genfiles -type d -prune -print)
 	git submodule deinit --all
 

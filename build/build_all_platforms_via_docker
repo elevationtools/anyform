@@ -49,6 +49,7 @@ function main() {
   )
   (
     cd genfiles/bin
+    rm -f anyform-windows-*.exe || true
     for x in anyform-windows-*; do
       mv "$x" "${x}.exe"
     done

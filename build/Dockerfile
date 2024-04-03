@@ -14,11 +14,16 @@ ENV JSONNET_PATH="$REPO_ROOT"
 
 WORKDIR "$REPO_ROOT"
 
-# Deps first to utilize the layer cache.
+# Long running deps first to utilize the layer cache.
 COPY /deps/ ./deps/
 COPY /Makefile /activate.sh ./
-RUN mako -C ./deps/golang
+RUN mako -C deps/golang && \
+    mako -C deps/gomplate && \
+    mako -C deps/jsonnet && \
+    mako -C deps/jsonnet-bundler
 
 COPY /module ./module
+COPY /tests ./tests
+RUN make test
 RUN mako -C ./module/cli all_platforms
 

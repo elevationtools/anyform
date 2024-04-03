@@ -1,5 +1,5 @@
 
-include $(MAKO_ROOT)/dep.mk
+include $(MAKO_ROOT)/util.mk
 
 ifeq "$(MAKO_STAGE)" "main"
 
@@ -13,4 +13,10 @@ smoketest:
 	go version | grep 1.22
 
 endif
+
+clean:
+	-chmod -R u+w $(REPO_ROOT)/deps/gopath/genfiles
+	rm -rf $(REPO_ROOT)/deps/gopath/genfiles
+
+include $(MAKO_ROOT)/dep.mk
 

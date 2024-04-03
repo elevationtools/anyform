@@ -1,5 +1,5 @@
 
-include $(MAKO_ROOT)/dep.mk
+include $(MAKO_ROOT)/util.mk
 
 define DEPS
 	$(REPO_ROOT)/deps/jsonnet
@@ -19,4 +19,6 @@ endif
 
 clean:
 	rm -rf vendor
+
+include $(MAKO_ROOT)/dep.mk
 

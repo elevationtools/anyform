@@ -1,5 +1,5 @@
 
-include $(MAKO_ROOT)/dep.mk
+include $(MAKO_ROOT)/util.mk
 
 ifeq "$(MAKO_STAGE)" "main"
 
@@ -12,4 +12,6 @@ smoketest:
 	jq --version | grep 1.7.1
 
 endif
+
+include $(MAKO_ROOT)/dep.mk
 

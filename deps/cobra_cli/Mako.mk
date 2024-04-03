@@ -1,10 +1,9 @@
 
+include $(MAKO_ROOT)/util.mk
 
 define DEPS
 	$(REPO_ROOT)/deps/golang
 endef
-
-include $(MAKO_ROOT)/dep.mk
 
 ifeq "$(MAKO_STAGE)" "main"
 
@@ -15,4 +14,6 @@ smoketest:
 	cobra-cli --help | grep 'Cobra is a CLI' > /dev/null
 
 endif
+
+include $(MAKO_ROOT)/dep.mk
 
