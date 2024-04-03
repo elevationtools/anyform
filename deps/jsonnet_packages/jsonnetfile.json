@@ -1,6 +1,15 @@
 {
   "version": 1,
   "dependencies": [
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/elevationtools/anyform.git",
+          "subdir": "jsonnet_lib/anyform"
+        }
+      },
+      "version": "bb-jsonnetlib-testfixes"
+    }
   ],
   "legacyImports": true
 }

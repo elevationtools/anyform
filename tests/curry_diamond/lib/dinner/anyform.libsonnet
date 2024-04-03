@@ -1,11 +1,14 @@
 
-(import 'jsonnet_lib/orchestrator.libsonnet')(std.thisFile) {
+local anyform = import 'anyform/anyform.libsonnet';
+local stage = anyform.stage;
+
+anyform.dag(std.thisFile) {
   stages: {
-    shop: {},
-    local cooking_tmpl = { depends_on: ['shop'] },
+    shop: stage([]),
+    local cooking_tmpl = stage(['shop']),
     cook_curry: cooking_tmpl,
     cook_rice: cooking_tmpl,
-    eat: { depends_on: ['cook_curry', 'cook_rice'] },
+    eat: stage(['cook_curry', 'cook_rice']),
   },
 
   config: {
