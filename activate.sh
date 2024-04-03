@@ -10,7 +10,7 @@ activate_anyform_repo_sh() {
   export GOROOT="$REPO_ROOT/deps/golang/genfiles/go"
   export GOPATH="$REPO_ROOT/deps/gopath/genfiles"
   export MAKO_ROOT="$REPO_ROOT/deps/mako/lib"
-  export JSONNET_PATH="$REPO_ROOT"
+  export JSONNET_PATH="$REPO_ROOT:$REPO_ROOT/deps/jsonnet_packages/vendor"
 }
 
 activate_anyform_repo_sh

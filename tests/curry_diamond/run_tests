@@ -29,10 +29,14 @@ function main() {
 }
 
 function CliStdout() {
-  rm -rf $(find ./prod/tuesday -name genfiles -prune -print)
-  expect_stripped_eq_stdin \
-    "$(cd prod/tuesday; anyform up 2>/dev/null)" \
-    <<EOF
+  rm -rf $(find ./prod/tuesday -name genfiles -prune -print) || return 1
+  local result
+  result="$(cd prod/tuesday; anyform up 2>/dev/null)" || {
+    # Do it again to get error output
+    (cd prod/tuesday; anyform up)
+    return 1
+  }
+  expect_stripped_eq_stdin "$result" <<EOF
 stage=shop] Walking to the store
 stage=shop] Filling up the cart
 stage=shop] Pay for everything
@@ -52,9 +56,13 @@ EOF
 # both those files.
 function CliStdoutStderrCombination() {
   rm -rf $(find ./prod/tuesday -name genfiles -prune -print)
-  expect_stripped_eq_stdin \
-      "$(cd prod/tuesday; anyform up 2>&1)" \
-      <<EOF
+  local result
+  result="$(cd prod/tuesday; anyform up 2>&1)" || {
+    # Do it again to get error output
+    (cd prod/tuesday; anyform up)
+    return 1
+  }
+  expect_stripped_eq_stdin "$result" <<EOF
 stage=shop] Walking to the store
 stage=shop] Filling up the cart
 stage=shop] Pay for everything

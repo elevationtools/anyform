@@ -2,11 +2,11 @@
 function runtest() {
   test_name="${1:?}"
   echo -n "$test_name: "
-  if test_output="$("$test_name")"; then
+  if "$test_name" &> /dev/null; then
     echo "OK"
   else
-    echo "FAILURE"
-    echo "$test_output"
+    echo "FAILURE ($?)"
+    ( set -euo pipefail; "$test_name" ) || true
     return 1
   fi
 }
@@ -17,20 +17,20 @@ function strip_timestamp() {
 }
 
 function expect_stripped_eq_stdin() {
-  local actual="${1:?}"
+  local actual="$1"
   expect_eq_stdin "$(echo "$actual" | strip_timestamp 2>&1)"
 }
 
 function expect_eq_stdin() {
-  local actual="${1:?}"
+  local actual="$1"
   local expected
   expected="$(< /dev/stdin)"
   expect_eq "$actual" "$expected"
 }
 
 function expect_eq() {
-  local actual="${1:?}"
-  local expected="${2:?}"
+  local actual="$1"
+  local expected="$2"
   if [[ "$actual" != "$expected" ]]; then
     echo "----------"
     echo "Actual:"
@@ -51,7 +51,7 @@ function expect_eq() {
 }
 
 function expect_json_eq_stdin() {
-  actual="${1:?}"
+  actual="$1"
   expected="$(cat)"
 
   # normalize

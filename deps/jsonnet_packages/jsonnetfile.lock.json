@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "dependencies": [
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/elevationtools/anyform.git",
+          "subdir": "jsonnet_lib/anyform"
+        }
+      },
+      "version": "67fb5ebbccad455566db6ee34870f22f36400da9",
+      "sum": "f5BsEP5jCkRmWxNoyKetMfYLIK7r+DPnal9HQYCE12s="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/elevationtools/jsonnet_utils.git",
+          "subdir": "elevation"
+        }
+      },
+      "version": "cacfededa3d23a6235222808c96b647c4aae9fbf",
+      "sum": "3EBAK07nu2mKeGsyNXV6LwWVvPct8SAtDkV10FSxDQg="
+    }
+  ],
+  "legacyImports": false
+}
