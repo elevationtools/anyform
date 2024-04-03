@@ -169,14 +169,11 @@ func (s *Stage) RunCmd(ctx context.Context, ctlArg string) error {
   cmd.Dir = s.stampDir()
   cmd.Env = append(cmd.Environ(),
     "ANYFORM_STAGE_NAME=" + s.Name,
+    "ANYFORM_STAGE_STAMP_DIR=" + AbsJoin(s.stampDir()),
     "ANYFORM_CONFIG_JSON_FILE=" + AbsJoin(s.globe.Config.Orchestrator.ConfigJsonFile),
     "ANYFORM_GENFILES=" + AbsJoin(s.globe.Config.Orchestrator.GenfilesDir),
     "ANYFORM_IMPL_DIR=" + AbsJoin(s.orchestratorSpec.ImplDir),
     "ANYFORM_OUTPUT_DIR=" + AbsJoin(s.globe.Config.Orchestrator.OutputDir),
-    "ANYFORM_INTERACTIVE=" + func() string {
-      if s.globe.Config.Orchestrator.Interactive { return "true" }
-      return "false"
-    }(),
   )
   err := s.globe.SubprocessRunner.RunCmd(
       "stage=" + s.Name, cmd, filepath.Join(

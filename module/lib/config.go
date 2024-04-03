@@ -10,7 +10,6 @@ type OrchestratorConfig struct {
   GenfilesDir string `json:"genfiles_dir"`
   OutputDir string `json:"output_dir"`
   ConfigJsonFile string `json:"config_json_file"`
-  Interactive bool `json:"interactive"`
 }
 
 type AnyformConfig struct {
@@ -37,7 +36,6 @@ func NewDefaultAnyformConfig() *AnyformConfig {
 	ac.Orchestrator.OutputDir = Getenv("ANYFORM_OUTPUT_DIR", "output")
 	ac.Orchestrator.ConfigJsonFile = Getenv("ANYFORM_CONFIG_JSON_FILE",
 			filepath.Join(ac.Orchestrator.GenfilesDir, "config.json"))
-	ac.Orchestrator.Interactive = true
 
 	ac.OrchestratorSpecFile = "anyform.jsonnet"
 	ac.Jsonnet = Getenv("JSONNET", "jsonnet")
