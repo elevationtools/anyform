@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "dependencies": [
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/elevationtools/jsonnet_utils.git",
+          "subdir": "elevation"
+        }
+      },
+      "version": "v0.0.2"
+    }
+  ],
+  "legacyImports": true
+}
