@@ -47,3 +47,5 @@ func NewDefaultAnyformConfig() *AnyformConfig {
 
 	return ac
 }
+
+const CtlFileName = "ctl"

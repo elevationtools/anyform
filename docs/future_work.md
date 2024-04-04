@@ -28,6 +28,16 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 - Support `--version` or `anyform version`
 
+- Feature: `anyform markdown STAGE_NAME` allows forceably skipping a step.
+  Creates the state file.
+
+- Provide example of breaking a terraform lock:
+  https://developer.hashicorp.com/terraform/cli/commands/force-unlock
+
+- Feature: `anyform down --skip-failures` to just optimistically try to bring
+  down all stages, even if there was a failure while trying to bring down a
+  child stage.
+
 - Reconsider split of Config, Spec, and InnerConfig.
   - Especially that OrchestratorSpecFile is in AnyformConfig.
 

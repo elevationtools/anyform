@@ -28,7 +28,7 @@ func (dc *DefaultSubprocessRunner) RunCmd(
     label string, cmd *exec.Cmd, logDir string) error {
 	err := os.MkdirAll(logDir, 0750)
 	if err != nil { return Errorf("mkdir -p '%v': %w", logDir, err) }
-	logFilePath := filepath.Join(logDir, "ctl-stdout_stderr")
+	logFilePath := filepath.Join(logDir, Timestamp() + "-ctl-stdout_stderr")
 	logFile, err := os.Create(logFilePath)
 	if err != nil { return Errorf("creating log file '%v': %w", logFilePath, err) }
 

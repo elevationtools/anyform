@@ -29,7 +29,7 @@ func (vs VertexState) ToString() string {
 type VertexRunFunc = func(ctx context.Context) error
 
 type Dag interface {
-  AddVertex(name string, childNames []string, runFunc VertexRunFunc) error
+  AddVertex(name string, parentNames []string, runFunc VertexRunFunc) error
 	// If `parallel` is false, only run one stage at a time, otherwise use maximum
 	// parallelism.
   Run(ctx context.Context, parallel bool) error

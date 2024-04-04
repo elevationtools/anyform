@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"time"
 )
 
 // Error wrapper ///////////////////////////////////////////////////////////////
@@ -75,3 +76,10 @@ func MkdirAll(path string) error {
 	return nil
 }
 
+func Timestamp() string {
+	// TODO(performance):  creating a loc every time seems inefficient (golang
+	// timestamp formatting, RAWR!)
+	loc, err := time.LoadLocation("UTC")
+	if err != nil { panic(err) }
+	return time.Now().In(loc).Format("20060102150405") + "Z"
+}

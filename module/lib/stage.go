@@ -35,6 +35,7 @@ type Stage struct {
   stateFilePath string
 	stageImplDir string
 	stampDir string
+	ctlPath string
 	logDir string
   // Used for both stamping and running of the stage ctl command.
   envVars []string
@@ -56,6 +57,7 @@ func NewStage(name string, globe *Globe,
       filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "state")
 	s.stageImplDir = filepath.Join(s.orchestratorSpec.ImplDir, s.Name)
 	s.stampDir = filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "stamp")
+	s.ctlPath = filepath.Join(s.stampDir, CtlFileName)
 	s.logDir = filepath.Join(
 			s.globe.Config.Orchestrator.GenfilesDir, s.Name, "logs")
   s.envVars = []string{
@@ -73,28 +75,30 @@ func NewStage(name string, globe *Globe,
 // Wrap UpImpl so that all errors can be captured and displayed.  The DAG
 // swallows errors so they need to be displayed here.
 func (s *Stage) Up(ctx context.Context) error {
-	slog.Info("stage up starting", "stage", s.Name)
 	err := s.UpImpl(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[stage=%v] failed: %v", s.Name, err)
+		s.stderr("failed: %v", err)
 		return err
 	}
-  slog.Info("stage up done", "stage", s.Name)
 	return nil
 }
 
 func (s *Stage) UpImpl(ctx context.Context) error {
+	s.stdout("starting")
 	if s.alreadyUpToDate("up") { return nil }
 
+	s.stdout("stamping")
   err := s.Stamp(ctx)
   if err != nil { return err }
 
+	s.stdout("running 'ctl up'")
   err = s.RunStampedCtl(ctx, "up")
   if err != nil { return err }
 
   err = util.ToJSONFile(StageStateFile{LastCommand: "up"}, s.stateFilePath)
   if err != nil { return Errorf("writing %v: %w", s.stateFilePath, err) }
   
+	s.stdout("done")
   return nil
 }
 
@@ -108,19 +112,19 @@ func (s *Stage) alreadyUpToDate(command string) bool {
 	if err != nil {
 		// Ignore errors here because all stages must be idempotent and maybe the
 		// error is recoverable
-		fmt.Fprintf(os.Stderr,
-			 "[stage=%v] warning: unable to determine if operation is already done," +
-			 " assuming it's not: %v\n",
-				s.Name, err)
+		s.stderr(
+				"warning: unable to determine if '%v' is already done," +
+			 	" assuming it's not: %v", command, err)
 			return false
 	}
 	
 	if autd {
-    fmt.Printf("[stage=%v] skipping, already done\n", s.Name)
+    s.stdout("skipping, already done")
     return true
   }
 
-	slog.Debug("[stage=%v] needs updating, reason: %v\n", s.Name, reason)
+	slog.Debug(fmt.Sprintf(
+			"[stage=%v] needs updating, reason: %v", s.Name, reason))
 	return false
 }
 
@@ -187,28 +191,67 @@ func (s *Stage) RunStampedCtl(ctx context.Context, ctlArg string) error {
   logStr := "stage './ctl " + ctlArg + "'"
   slog.Debug(logStr, "stage", s.Name)
 
-  cmd := exec.CommandContext(ctx, AbsJoin(s.stampDir, "/ctl"), ctlArg)
+  // TODO(fragile): figure out how to make a relative path in a platform
+  // independent way.  filepath.Join(".", "foo") doesn't work.
+  cmd := exec.CommandContext(ctx, "./" + CtlFileName, ctlArg)
   cmd.Dir = s.stampDir
   cmd.Env = append(cmd.Environ(), s.envVars...)
 
   err := s.globe.SubprocessRunner.RunCmd("stage=" + s.Name, cmd, s.logDir)
-  if err != nil { return Errorf("stage %v: %w", s.Name, err) }
+  if err != nil { return Errorf("running ctl: %w", err) }
 
   slog.Debug(logStr + " completed", "stage", s.Name)
   return nil
 }
 
 func (s *Stage) Down(ctx context.Context) error {
-  slog.Info("stage down starting", "stage", s.Name)
+	err := s.DownImpl(ctx)
+	if err != nil {
+		s.stderr("failed: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (s *Stage) DownImpl(ctx context.Context) error {
+	s.stdout("starting")
 
 	if s.alreadyUpToDate("down") { return nil }
 
-  err := s.RunStampedCtl(ctx, "down")
+	_, err := os.Stat(s.ctlPath)
+	if err != nil {
+		if !os.IsNotExist(err) { return err }
+		// Optimistically try to stamp, maybe we'll get lucky and it will work!
+		// It will work if:
+		// 1) all dependencies have run successfully.
+		// 2) stamping happens to not depend on dependencies.
+		// Because of (2) we don't bother checking for (1).
+		stampErr := s.Stamp(ctx)
+		if stampErr != nil {
+			return Errorf("optimistic stamp failed: %v", stampErr)
+		}
+		s.stdout("optimistic stamp succeeded")
+	}
+
+	s.stdout("running 'ctl down'")
+  err = s.RunStampedCtl(ctx, "down")
   if err != nil { return err }
 
   err = util.ToJSONFile(StageStateFile{LastCommand: "down"}, s.stateFilePath)
-  if err != nil { return Errorf("writing %v: %w", s.stateFilePath, err) }
+  if err != nil { return Errorf("writing '%v': %w", s.stateFilePath, err) }
  
-  slog.Info("stage down done", "stage", s.Name)
+	s.stdout("done")
   return nil
+}
+
+// Print to stdout.
+// Already adds prefix and newline.
+func (s *Stage) stdout(format string, args... any) {
+	args = append([]any{s.Name}, args...)
+	fmt.Printf("[stage=%v] " + format + "\n", args...)
+}
+
+func (s *Stage) stderr(format string, args... any) {
+	args = append([]any{s.Name}, args...)
+	fmt.Fprintf(os.Stderr, "[stage=%v] " + format + "\n", args...)
 }

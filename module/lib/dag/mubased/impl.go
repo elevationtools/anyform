@@ -127,6 +127,11 @@ func (dag *Dag) Run(ctx context.Context, parallel bool) error {
 		}
 	}
 
+	if len(dag.roots) == 0 {
+		panic("The DAG must have at least one root!" +
+		      " The above cycle check should have prevented this!")
+	}
+
 	// Start all the roots.
   dag.mu.Lock()
   for _, v := range dag.roots {

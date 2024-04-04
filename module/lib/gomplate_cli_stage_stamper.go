@@ -38,15 +38,16 @@ func (gc *GomplateCliStageStamper) Stamp(
 	}
 
   outBytes, err := cmd.CombinedOutput()
+	logFilePath := filepath.Join(logDir, Timestamp() + "-stamp-stdout_stderr")
+	logWriteErr := WriteFile(logFilePath, outBytes, false)
+	if logWriteErr != nil {
+		// Ugh, well at least print to stderr that we couldn't write the log file.
+		// Then ignore the error and hope for the best.
+		fmt.Fprintf(
+				os.Stderr, "%v", Errorf("failed writing to '%v': %w", logFilePath, logWriteErr))
+	}
   if err != nil {
 		// TODO(ux): reformat the hard-to-read gomplate golang text template error.
-		logFilePath := filepath.Join(logDir, "stamp-stdout_stderr")
-		err2 := WriteFile(logFilePath, outBytes, false)
-		if err2 != nil {
-			// Ugh, well at least print to stderr that we couldn't write the log file.
-			// Then ignore the error and hope for the best.
-			fmt.Fprintf(os.Stderr, "%v", err2)
-		}
     return Errorf("running stamper: %w: output: %v", err, string(outBytes))
   }
 	return nil
