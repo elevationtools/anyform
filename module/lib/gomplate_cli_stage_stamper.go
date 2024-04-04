@@ -38,7 +38,7 @@ func (gc *GomplateCliStageStamper) Stamp(
 	}
 
   outBytes, err := cmd.CombinedOutput()
-	logFilePath := filepath.Join(logDir, Timestamp() + "-stamp-stdout_stderr")
+	logFilePath := filepath.Join(logDir, TimestampUtcSmall() + "-stamp-stdout_stderr")
 	logWriteErr := WriteFile(logFilePath, outBytes, false)
 	if logWriteErr != nil {
 		// Ugh, well at least print to stderr that we couldn't write the log file.

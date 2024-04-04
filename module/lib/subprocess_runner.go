@@ -28,7 +28,7 @@ func (dc *DefaultSubprocessRunner) RunCmd(
     label string, cmd *exec.Cmd, logDir string) error {
 	err := os.MkdirAll(logDir, 0750)
 	if err != nil { return Errorf("mkdir -p '%v': %w", logDir, err) }
-	logFilePath := filepath.Join(logDir, Timestamp() + "-ctl-stdout_stderr")
+	logFilePath := filepath.Join(logDir, TimestampUtcSmall() + "-ctl-stdout_stderr")
 	logFile, err := os.Create(logFilePath)
 	if err != nil { return Errorf("creating log file '%v': %w", logFilePath, err) }
 
@@ -91,7 +91,7 @@ func (dc *DefaultSubprocessRunner) relayStream(
 		// with buffered line reading.
 		scanner := bufio.NewScanner(stream)
 		for scanner.Scan() {
-			timestamp := time.Now().Format(time.RFC3339)
+			timestamp := TimestampUtcMedium()
 			dc.mu.Lock()
 			fmt.Fprintf(thisProcessStdStream, "[%v %v] %v\n", timestamp, label, scanner.Text())
 			fmt.Fprintf(logFile, "[%v %v] %v\n", timestamp, streamName, scanner.Text())

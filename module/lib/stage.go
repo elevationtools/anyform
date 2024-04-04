@@ -197,7 +197,7 @@ func (s *Stage) RunStampedCtl(ctx context.Context, ctlArg string) error {
   cmd.Dir = s.stampDir
   cmd.Env = append(cmd.Environ(), s.envVars...)
 
-  err := s.globe.SubprocessRunner.RunCmd("stage=" + s.Name, cmd, s.logDir)
+  err := s.globe.SubprocessRunner.RunCmd(s.Name, cmd, s.logDir)
   if err != nil { return Errorf("running ctl: %w", err) }
 
   slog.Debug(logStr + " completed", "stage", s.Name)
@@ -247,11 +247,14 @@ func (s *Stage) DownImpl(ctx context.Context) error {
 // Print to stdout.
 // Already adds prefix and newline.
 func (s *Stage) stdout(format string, args... any) {
-	args = append([]any{s.Name}, args...)
-	fmt.Printf("[stage=%v] " + format + "\n", args...)
+	s.fprintf(os.Stdout, format, args...)
 }
 
 func (s *Stage) stderr(format string, args... any) {
+	s.fprintf(os.Stderr, format, args...)
+}
+
+func (s *Stage) fprintf(file *os.File, format string, args... any) {
 	args = append([]any{s.Name}, args...)
-	fmt.Fprintf(os.Stderr, "[stage=%v] " + format + "\n", args...)
+	fmt.Fprintf(file, "[%v] " + format + "\n", args...)
 }
