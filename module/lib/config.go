@@ -18,6 +18,7 @@ type AnyformConfig struct {
   Jsonnet string
   JsonnetDeps string
   Gomplate string
+	Interactive bool
 }
 
 func Getenv(envVar string, defaultValue string) string {
@@ -41,6 +42,8 @@ func NewDefaultAnyformConfig() *AnyformConfig {
 	ac.Jsonnet = Getenv("JSONNET", "jsonnet")
 	ac.JsonnetDeps = Getenv("JSONNET_DEPS", "jsonnet-deps")
 	ac.Gomplate = Getenv("GOMPLATE", "gomplate")
+	// Only exactly "false" will make it non-interactive.
+	ac.Interactive = Getenv("INTERACTIVE", "true") != "false"
 
 	return ac
 }

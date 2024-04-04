@@ -34,6 +34,10 @@ type Stage struct {
 
   stateFilePath string
 	stageImplDir string
+	stampDir string
+	logDir string
+  // Used for both stamping and running of the stage ctl command.
+  envVars []string
 }
 
 func NewStage(name string, globe *Globe,
@@ -51,51 +55,46 @@ func NewStage(name string, globe *Globe,
   s.stateFilePath = 
       filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "state")
 	s.stageImplDir = filepath.Join(s.orchestratorSpec.ImplDir, s.Name)
-
+	s.stampDir = filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "stamp")
+	s.logDir = filepath.Join(
+			s.globe.Config.Orchestrator.GenfilesDir, s.Name, "logs")
+  s.envVars = []string{
+		// DOCS(STAGE_ENVIRONMENT_VARIABLES)
+    "ANYFORM_STAGE_NAME=" + s.Name,
+    "ANYFORM_STAGE_STAMP_DIR=" + AbsJoin(s.stampDir),
+    "ANYFORM_CONFIG_JSON_FILE=" + AbsJoin(s.globe.Config.Orchestrator.ConfigJsonFile),
+    "ANYFORM_GENFILES=" + AbsJoin(s.globe.Config.Orchestrator.GenfilesDir),
+    "ANYFORM_IMPL_DIR=" + AbsJoin(s.orchestratorSpec.ImplDir),
+    "ANYFORM_OUTPUT_DIR=" + AbsJoin(s.globe.Config.Orchestrator.OutputDir),
+  }
   return s
 }
 
 // Wrap UpImpl so that all errors can be captured and displayed.  The DAG
 // swallows errors so they need to be displayed here.
 func (s *Stage) Up(ctx context.Context) error {
+	slog.Info("stage up starting", "stage", s.Name)
 	err := s.UpImpl(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[stage=%v] failed: %v", s.Name, err)
+		return err
 	}
-	return err
+  slog.Info("stage up done", "stage", s.Name)
+	return nil
 }
 
 func (s *Stage) UpImpl(ctx context.Context) error {
-	slog.Info("stage up starting", "stage", s.Name)
-  autd, err := s.alreadyUpToDate("up")
-	if err != nil {
-		// Ignore errors here because all stages must be idempotent and maybe the
-		// error is recoverable
-		fmt.Fprintf(os.Stderr,
-			 "[stage=%v] warning: unable to determine if operation is already done," +
-			 " assuming it's not: %v\n",
-				s.Name, err)
-	} else if autd {
-    fmt.Printf("[stage=%v] skipping 'up', already up to date\n", s.Name)
-    return nil
-  }
+	if s.alreadyUpToDate("up") { return nil }
 
-  err = s.Stamp(ctx)
-  if err != nil {
-    slog.Warn("stage up stamping failed", "stage", s.Name, "error", err)
-    return err
-  }
+  err := s.Stamp(ctx)
+  if err != nil { return err }
 
-  err = s.RunCmd(ctx, "up")
-  if err != nil {
-    slog.Warn("stage up running failed", "stage", s.Name, "error", err)
-    return err
-  }
+  err = s.RunStampedCtl(ctx, "up")
+  if err != nil { return err }
 
   err = util.ToJSONFile(StageStateFile{LastCommand: "up"}, s.stateFilePath)
   if err != nil { return Errorf("writing %v: %w", s.stateFilePath, err) }
   
-  slog.Info("stage up done", "stage", s.Name)
   return nil
 }
 
@@ -103,25 +102,50 @@ func (s *Stage) UpImpl(ctx context.Context) error {
 // - The state file's "last_command" is the given command.
 // - The CONFIG_JSON_FILE is older than the state file.
 // - TODO: The implementation of this stage or any parent stages has changed.
-// Always returns false on errors, which probably allows ignoring errors.
-func (s *Stage) alreadyUpToDate(command string) (bool, error) {
-  var stateFile StageStateFile
-  err := util.FromJSONFile(s.stateFilePath, &stateFile)
-  if err != nil && !os.IsNotExist(err) { return false, err }
-  if stateFile.LastCommand != command { return false, nil }
+// Always returns false on errors, which allows ignoring errors.
+func (s *Stage) alreadyUpToDate(command string) bool {
+  autd, reason, err := s.alreadyUpToDateImpl(command)
+	if err != nil {
+		// Ignore errors here because all stages must be idempotent and maybe the
+		// error is recoverable
+		fmt.Fprintf(os.Stderr,
+			 "[stage=%v] warning: unable to determine if operation is already done," +
+			 " assuming it's not: %v\n",
+				s.Name, err)
+			return false
+	}
+	
+	if autd {
+    fmt.Printf("[stage=%v] skipping, already done\n", s.Name)
+    return true
+  }
+
+	slog.Debug("[stage=%v] needs updating, reason: %v\n", s.Name, reason)
+	return false
+}
+
+// See alreadyUpToDate
+func (s *Stage) alreadyUpToDateImpl(command string) (bool, string, error) {
+  var stateData StageStateFile
+  err := util.FromJSONFile(s.stateFilePath, &stateData)
+  if err != nil {
+		if os.IsNotExist(err) { return false, fmt.Sprintf("file doesn't exist: %v", s.stateFilePath), nil }
+		return false, "", err
+	}
+  if stateData.LastCommand != command { return false, "different command", nil }
   stateFileInfo, err := os.Stat(s.stateFilePath)
-  if err != nil { return false, err }
+  if err != nil { return false, "", err }
   configFileInfo, err := os.Stat(s.globe.Config.Orchestrator.ConfigJsonFile)
-  if err != nil { return false, err }
+  if err != nil { return false, "", err }
   if configFileInfo.ModTime().After(stateFileInfo.ModTime()) {
-    return false, nil
+    return false, "config file newer", nil
   }
 	maxImplFileModTime, err := s.maxImplFileModTime()
-	if err != nil { return false, err }
+	if err != nil { return false, "", err }
   if maxImplFileModTime.After(stateFileInfo.ModTime()) {
-    return false, nil
+    return false, "impl newer", nil
 	}
-  return true, nil
+  return true, "", nil
 }
 
 func (s *Stage) maxImplFileModTime() (time.Time, error) {
@@ -143,16 +167,14 @@ func (s *Stage) maxImplFileModTime() (time.Time, error) {
 	return maxTime, nil
 }
 
-func (s *Stage) stampDir() string {
-  return filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "stamp")
-}
-
 func (s *Stage) Stamp(ctx context.Context) error {
   slog.Debug("stage stamping", "stage", s.Name)
-  stampDir := s.stampDir()
-   err := os.MkdirAll(stampDir, 0750)
-  if err != nil { return Errorf("mkdir -p '%v': %w", stampDir, err) }
-  return s.globe.StageStamper.Stamp(ctx, s.stageImplDir, stampDir)
+  err := MkdirAll(s.stampDir)
+  if err != nil {
+		return Errorf("Making stage stamp dir '%v': %w", s.stampDir, err)
+  }
+  return s.globe.StageStamper.Stamp(
+			ctx, s.Name, s.stageImplDir, s.stampDir, s.logDir, s.envVars)
 }
 
 func AbsJoin(elem ...string) string {
@@ -161,23 +183,15 @@ func AbsJoin(elem ...string) string {
   return res
 }
 
-func (s *Stage) RunCmd(ctx context.Context, ctlArg string) error {
+func (s *Stage) RunStampedCtl(ctx context.Context, ctlArg string) error {
   logStr := "stage './ctl " + ctlArg + "'"
   slog.Debug(logStr, "stage", s.Name)
 
-  cmd := exec.CommandContext(ctx, AbsJoin(s.stampDir(), "/ctl"), ctlArg)
-  cmd.Dir = s.stampDir()
-  cmd.Env = append(cmd.Environ(),
-    "ANYFORM_STAGE_NAME=" + s.Name,
-    "ANYFORM_STAGE_STAMP_DIR=" + AbsJoin(s.stampDir()),
-    "ANYFORM_CONFIG_JSON_FILE=" + AbsJoin(s.globe.Config.Orchestrator.ConfigJsonFile),
-    "ANYFORM_GENFILES=" + AbsJoin(s.globe.Config.Orchestrator.GenfilesDir),
-    "ANYFORM_IMPL_DIR=" + AbsJoin(s.orchestratorSpec.ImplDir),
-    "ANYFORM_OUTPUT_DIR=" + AbsJoin(s.globe.Config.Orchestrator.OutputDir),
-  )
-  err := s.globe.SubprocessRunner.RunCmd(
-      "stage=" + s.Name, cmd, filepath.Join(
-      s.globe.Config.Orchestrator.GenfilesDir, s.Name, "logs"))
+  cmd := exec.CommandContext(ctx, AbsJoin(s.stampDir, "/ctl"), ctlArg)
+  cmd.Dir = s.stampDir
+  cmd.Env = append(cmd.Environ(), s.envVars...)
+
+  err := s.globe.SubprocessRunner.RunCmd("stage=" + s.Name, cmd, s.logDir)
   if err != nil { return Errorf("stage %v: %w", s.Name, err) }
 
   slog.Debug(logStr + " completed", "stage", s.Name)
@@ -187,20 +201,9 @@ func (s *Stage) RunCmd(ctx context.Context, ctlArg string) error {
 func (s *Stage) Down(ctx context.Context) error {
   slog.Info("stage down starting", "stage", s.Name)
 
-  autd, err := s.alreadyUpToDate("down")
-	if err != nil {
-		// Ignore errors here because all stages must be idempotent and maybe the
-		// error is recoverable
-		fmt.Fprintf(os.Stderr,
-			 "[stage=%v] warning: unable to determine if operation is already done," +
-			 " assuming it's not: %v\n",
-				s.Name, err)
-	} else if autd {
-    fmt.Printf("[stage=%v] skipping 'down', already done\n", s.Name)
-    return nil
-  }
+	if s.alreadyUpToDate("down") { return nil }
 
-  err = s.RunCmd(ctx, "down")
+  err := s.RunStampedCtl(ctx, "down")
   if err != nil { return err }
 
   err = util.ToJSONFile(StageStateFile{LastCommand: "down"}, s.stateFilePath)

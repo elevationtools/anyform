@@ -3,7 +3,9 @@ package anyform
 
 import (
 	"errors"
+	"path/filepath"
 	"fmt"
+	"os"
 	"runtime/debug"
 )
 
@@ -48,3 +50,28 @@ func WrapError(err error) error {
 		&errorWithStack{stackTrace: string(debug.Stack())},
 	)
 }
+
+func WriteFile(filePath string, data []byte, executable bool) error {
+	err := MkdirAll(filepath.Dir(filePath))
+	if err != nil { return err }
+	var perm os.FileMode
+	if executable {
+		perm = 0770
+	} else {
+		perm = 0660 
+	}
+	err = os.WriteFile(filePath, data, perm)
+	if err != nil {
+		return Errorf("writing file '%v': %w", filePath, err)
+	}
+	return nil
+}
+
+func MkdirAll(path string) error {
+  err := os.MkdirAll(path, 0770)
+	if err != nil {
+		return Errorf("mkdir -p '%v': %w", path, err)
+	}
+	return nil
+}
+

@@ -29,13 +29,14 @@
 - Stage definitions can use a general purpose templating engine to fill missing
   pieces of tools like Terraform, Helm, etc (the gaps are identified
   below), rather than requiring specific solutions for each tool. Currently,
-  gomplate is used.
+  gomplate is used.  Dependency stage outputs are available while stamping
+  templates.
 
 #### Tertiary goals
 
 - Allow plugging in different config and templating engines instead of Jsonnet
-  and gomplate.  This is already easy within the golang code, but cannot yet be
-  done post-compilation of `anyform`.
+  and gomplate.  (This is already easy within the golang code, but cannot yet be
+  done post-compilation).
   
 
 ## Common Tooling Problems Addressed

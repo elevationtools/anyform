@@ -28,10 +28,13 @@ func (dc *DefaultSubprocessRunner) RunCmd(
     label string, cmd *exec.Cmd, logDir string) error {
 	err := os.MkdirAll(logDir, 0750)
 	if err != nil { return Errorf("mkdir -p '%v': %w", logDir, err) }
-	logFilePath := filepath.Join(logDir, "stdout_stderr")
+	logFilePath := filepath.Join(logDir, "ctl-stdout_stderr")
 	logFile, err := os.Create(logFilePath)
 	if err != nil { return Errorf("creating log file '%v': %w", logFilePath, err) }
 
+  if dc.globe.Config.Interactive {
+    cmd.Stdin = os.Stdin
+  }
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil { return Errorf("creating stdout pipe: %w", err) }
 	stderrPipe, err := cmd.StderrPipe()
@@ -69,13 +72,31 @@ func (dc *DefaultSubprocessRunner) relayStream(
 		thisProcessStdStream *os.File, logFile *os.File,
 		err *error, wg *sync.WaitGroup) {
 	defer wg.Done()
-	scanner := bufio.NewScanner(stream)
-	for scanner.Scan() {
-		timestamp := time.Now().Format(time.RFC3339)
-		dc.mu.Lock()
-		fmt.Fprintf(thisProcessStdStream, "[%v %v] %v\n", timestamp, label, scanner.Text())
-		fmt.Fprintf(logFile, "[%v %v] %v\n", timestamp, streamName, scanner.Text())
-		dc.mu.Unlock()
+	if dc.globe.Config.Interactive {
+		// In interactive mode, we don't need to lock stdout/stderr because there is
+		// no parallelism.  Also, we expect to have CLI user prompts with no \n that
+		// need to be displayed immediately to the user.  Therefore, we directly tee
+		// the stream to stdout/stderr, then do buffered line reading for the log
+		// file only.
+		scanner := bufio.NewScanner(io.TeeReader(stream, thisProcessStdStream))
+		for scanner.Scan() {
+			timestamp := time.Now().Format(time.RFC3339)
+			dc.mu.Lock()
+			fmt.Fprintf(logFile, "[%v %v] %v\n", timestamp, streamName, scanner.Text())
+			dc.mu.Unlock()
+		}
+		*err = scanner.Err()
+	} else {
+		// In non-interactive mode, just treat stdout/stderr like another log file
+		// with buffered line reading.
+		scanner := bufio.NewScanner(stream)
+		for scanner.Scan() {
+			timestamp := time.Now().Format(time.RFC3339)
+			dc.mu.Lock()
+			fmt.Fprintf(thisProcessStdStream, "[%v %v] %v\n", timestamp, label, scanner.Text())
+			fmt.Fprintf(logFile, "[%v %v] %v\n", timestamp, streamName, scanner.Text())
+			dc.mu.Unlock()
+		}
+		*err = scanner.Err()
 	}
-	*err = scanner.Err()
 }

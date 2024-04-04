@@ -26,13 +26,7 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 ## Unorganized Todos
 
-- Use //tests in CI/CD
-
-- Improve error message for stage ctl script error and stamping error (e.g.
-  `EATER_NAME` wasn't set, {{ Env.EATER_NAME }} barfed, and the error message is
-  escaped and almost unreadable, similarly for a normal script error).
-
-- Integration tests.
+- Support `--version` or `anyform version`
 
 - Reconsider split of Config, Spec, and InnerConfig.
   - Especially that OrchestratorSpecFile is in AnyformConfig.

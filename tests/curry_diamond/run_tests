@@ -7,6 +7,7 @@ source ./test_util.bash
 
 function main() {
   export EATER_NAME="HungryGuy"
+  export INTERACTIVE=false
   # All "prod/tuesday"
   runtest CliStdout
   runtest CliStdoutStderrCombination
@@ -79,7 +80,7 @@ EOF
 
 function LogStageShop() {
   expect_stripped_eq_stdin \
-      "$(< ./prod/tuesday/genfiles/shop/logs/stdout_stderr)" \
+      "$(< ./prod/tuesday/genfiles/shop/logs/ctl-stdout_stderr)" \
       <<EOF
 stdout] Walking to the store
 stdout] Filling up the cart
@@ -90,7 +91,7 @@ EOF
 
 function LogStageCookCurry() {
   expect_stripped_eq_stdin \
-      "$(< ./prod/tuesday/genfiles/cook_curry/logs/stdout_stderr)" \
+      "$(< ./prod/tuesday/genfiles/cook_curry/logs/ctl-stdout_stderr)" \
       <<EOF
 stdout] Cooking up the curry
 stderr] Oh no! Forgot the galangal!...
@@ -100,7 +101,7 @@ EOF
 
 function LogStageCookRice() {
   expect_stripped_eq_stdin \
-      "$(< ./prod/tuesday/genfiles/cook_rice/logs/stdout_stderr)" \
+      "$(< ./prod/tuesday/genfiles/cook_rice/logs/ctl-stdout_stderr)" \
       <<EOF
 stdout] Cooking up the rice
 stdout] Rice is done
@@ -109,7 +110,7 @@ EOF
 
 function LogStageEat() {
   expect_stripped_eq_stdin \
-      "$(< ./prod/tuesday/genfiles/eat/logs/stdout_stderr)" \
+      "$(< ./prod/tuesday/genfiles/eat/logs/ctl-stdout_stderr)" \
       <<EOF
 stdout] Nom nom nom
 stdout] Yum

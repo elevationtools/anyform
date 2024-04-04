@@ -113,7 +113,7 @@ func (orc* Orchestrator) Up(ctx context.Context) error {
     })
   }
 
-  return dag.Run(ctx)
+  return dag.Run(ctx, !orc.globe.Config.Interactive)
 }
 
 func (orc* Orchestrator) Down(ctx context.Context) error {
@@ -132,7 +132,7 @@ func (orc* Orchestrator) Down(ctx context.Context) error {
     })
   }
 
-  return dag.Run(ctx)
+  return dag.Run(ctx, !orc.globe.Config.Interactive)
 }
 
 func (orc* Orchestrator) Clean(ctx context.Context) error {
