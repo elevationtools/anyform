@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
+var (
   AnyformVersion = "0.0.0-unsetgocode"
 )
 
