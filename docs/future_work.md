@@ -26,8 +26,6 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 ## Unorganized Todos
 
-- Support `--version` or `anyform version`
-
 - Feature: `anyform markdown STAGE_NAME` allows forceably skipping a step.
   Creates the state file.
 

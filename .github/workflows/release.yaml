@@ -35,7 +35,7 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" |
             docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           CONTAINER_REGISTRY=ghcr.io/elevationtools \
-            VERSION="${{ github.ref_name }}" mako -C build github
+            ANYFORM_VERSION="${{ github.ref_name }}" mako -C build github
 
       - name: Create release
         env:

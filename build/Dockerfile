@@ -1,6 +1,8 @@
 
 FROM ubuntu:22.04
 
+ARG ANYFORM_VERSION=0.0.0-unsetdocker
+
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update
 RUN apt-get -y install make curl

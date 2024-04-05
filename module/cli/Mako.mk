@@ -5,13 +5,15 @@ define DEPS
 	$(REPO_ROOT)/deps/golang
 endef
 
+ANYFORM_VERSION ?= 0.0.0-unsetmako
+
 ifeq "$(MAKO_STAGE)" "main"
 
 DEFAULT_TARGETS := genfiles/bin/anyform
 DEFAULT_PREREQS := $(shell find . ../lib ../common -name genfiles -prune -o -name "*.go") \
 	| genfiles/bin
 genfiles/bin/anyform:
-	go build -o $@ .
+	go build -ldflags '-X "$(shell go list ./cmd).AnyformVersion=$(ANYFORM_VERSION)"' -o $@ .
 
 # 1: GOOS value
 # 2: GOARCh value
