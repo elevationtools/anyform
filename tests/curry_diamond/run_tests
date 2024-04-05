@@ -7,6 +7,7 @@ source ./test_util.bash
 
 function main() {
   export EATER_NAME="HungryGuy"
+  export INTERACTIVE=false
   # All "prod/tuesday"
   runtest CliStdout
   runtest CliStdoutStderrCombination
@@ -37,16 +38,20 @@ function CliStdout() {
     return 1
   }
   expect_stripped_eq_stdin "$result" <<EOF
-stage=shop] Walking to the store
-stage=shop] Filling up the cart
-stage=shop] Pay for everything
-stage=shop] Head home
-stage=cook_rice] Cooking up the rice
-stage=cook_rice] Rice is done
-stage=cook_curry] Cooking up the curry
-stage=cook_curry] Curry is done
-stage=eat] Nom nom nom
-stage=eat] Yum
+[shop] Walking to the store
+[shop] Filling up the cart
+[shop] Pay for everything
+[shop] Head home
+[shop] done
+[cook_rice] Cooking up the rice
+[cook_rice] Rice is done
+[cook_rice] done
+[cook_curry] Cooking up the curry
+[cook_curry] Curry is done
+[cook_curry] done
+[eat] Nom nom nom
+[eat] Yum
+[eat] done
 EOF
 }
 
@@ -63,56 +68,60 @@ function CliStdoutStderrCombination() {
     return 1
   }
   expect_stripped_eq_stdin "$result" <<EOF
-stage=shop] Walking to the store
-stage=shop] Filling up the cart
-stage=shop] Pay for everything
-stage=shop] Head home
-stage=cook_rice] Cooking up the rice
-stage=cook_rice] Rice is done
-stage=cook_curry] Cooking up the curry
-stage=cook_curry] Oh no! Forgot the galangal!...
-stage=cook_curry] Curry is done
-stage=eat] Nom nom nom
-stage=eat] Yum
+[shop] Walking to the store
+[shop] Filling up the cart
+[shop] Pay for everything
+[shop] Head home
+[shop] done
+[cook_rice] Cooking up the rice
+[cook_rice] Rice is done
+[cook_rice] done
+[cook_curry] Cooking up the curry
+[cook_curry] Oh no! Forgot the galangal!...
+[cook_curry] Curry is done
+[cook_curry] done
+[eat] Nom nom nom
+[eat] Yum
+[eat] done
 EOF
 }
 
 function LogStageShop() {
   expect_stripped_eq_stdin \
-      "$(< ./prod/tuesday/genfiles/shop/logs/stdout_stderr)" \
+      "$(< ./prod/tuesday/genfiles/shop/logs/*-ctl-stdout_stderr)" \
       <<EOF
-stdout] Walking to the store
-stdout] Filling up the cart
-stdout] Pay for everything
-stdout] Head home
+[stdout] Walking to the store
+[stdout] Filling up the cart
+[stdout] Pay for everything
+[stdout] Head home
 EOF
 }
 
 function LogStageCookCurry() {
   expect_stripped_eq_stdin \
-      "$(< ./prod/tuesday/genfiles/cook_curry/logs/stdout_stderr)" \
+      "$(< ./prod/tuesday/genfiles/cook_curry/logs/*-ctl-stdout_stderr)" \
       <<EOF
-stdout] Cooking up the curry
-stderr] Oh no! Forgot the galangal!...
-stdout] Curry is done
+[stdout] Cooking up the curry
+[stderr] Oh no! Forgot the galangal!...
+[stdout] Curry is done
 EOF
 }
 
 function LogStageCookRice() {
   expect_stripped_eq_stdin \
-      "$(< ./prod/tuesday/genfiles/cook_rice/logs/stdout_stderr)" \
+      "$(< ./prod/tuesday/genfiles/cook_rice/logs/*-ctl-stdout_stderr)" \
       <<EOF
-stdout] Cooking up the rice
-stdout] Rice is done
+[stdout] Cooking up the rice
+[stdout] Rice is done
 EOF
 }
 
 function LogStageEat() {
   expect_stripped_eq_stdin \
-      "$(< ./prod/tuesday/genfiles/eat/logs/stdout_stderr)" \
+      "$(< ./prod/tuesday/genfiles/eat/logs/*-ctl-stdout_stderr)" \
       <<EOF
-stdout] Nom nom nom
-stdout] Yum
+[stdout] Nom nom nom
+[stdout] Yum
 EOF
 }
 
@@ -154,17 +163,21 @@ function FridayCliStdoutStderrCombination() {
   expect_stripped_eq_stdin \
       "$(cd prod/friday; anyform up 2>&1)" \
       <<EOF
-stage=shop] Walking to the store
-stage=shop] Filling up the cart
-stage=shop] Pay for everything
-stage=shop] Head home
-stage=cook_rice] Cooking up the rice
-stage=cook_rice] Rice is done
-stage=cook_curry] Cooking up the curry
-stage=cook_curry] Oh no! Forgot the galangal!...
-stage=cook_curry] Curry is done
-stage=eat] Nom nom nom
-stage=eat] Yum
+[shop] Walking to the store
+[shop] Filling up the cart
+[shop] Pay for everything
+[shop] Head home
+[shop] done
+[cook_rice] Cooking up the rice
+[cook_rice] Rice is done
+[cook_rice] done
+[cook_curry] Cooking up the curry
+[cook_curry] Oh no! Forgot the galangal!...
+[cook_curry] Curry is done
+[cook_curry] done
+[eat] Nom nom nom
+[eat] Yum
+[eat] done
 EOF
 }
 
@@ -175,6 +188,22 @@ Eating a friday night dinner prepped by:
   simmering eggplant, lemongrass in green curry
 $EATER_NAME says yum yum!
 EOF
+}
+
+# Strip off the variable parts so the test output is deterministic.
+# Strips:
+# - Obviously the timestamps
+# - "starting" and "stamping" logs need to be stripped because parallel stages
+#   can print these in any order.  "done" doesn't need stripping because we can
+#   force the ordering in the implementation of the stages with "sleep" calls.
+function strip() {
+  sed -E 's/^\[2...-..-..T..:..:..Z /[/g' |
+    grep -vE '\[.*\] (starting|stamping|running .ctl .*)$'
+}
+
+function expect_stripped_eq_stdin() {
+  local actual="$1"
+  expect_eq_stdin "$(echo "$actual" | strip 2>&1)"
 }
 
 main "$@"

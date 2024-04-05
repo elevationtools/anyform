@@ -61,6 +61,8 @@ type Dag struct {
 
   done chan bool
   mu sync.Mutex
+	parallel bool
+	antiParallelMutex sync.Mutex
 }
 
 func NewDag() daglib.Dag {
@@ -87,7 +89,9 @@ func (dag *Dag) AddVertex(name string, parentNames []string,
   return nil
 }
 
-func (dag *Dag) Run(ctx context.Context) error {
+func (dag *Dag) Run(ctx context.Context, parallel bool) error {
+	dag.parallel = parallel
+
 	// Create the DAG
   for _, v := range dag.all {
 		// dag.mu not needed because no concurrency has started yet.
@@ -121,6 +125,11 @@ func (dag *Dag) Run(ctx context.Context) error {
 			}
 			return fmt.Errorf("Cycle detected: %v", strings.Join(names, ", "))
 		}
+	}
+
+	if len(dag.roots) == 0 {
+		panic("The DAG must have at least one root!" +
+		      " The above cycle check should have prevented this!")
 	}
 
 	// Start all the roots.
@@ -186,7 +195,9 @@ func (dag *Dag) transitionNotStartedToRunning_prelock(v *Vertex,
 		if v.runningElement == nil { panic("unexpected") }
 		if v.state != daglib.VertexStateRunning { panic("unexpected") }
 
+		if !dag.parallel { dag.antiParallelMutex.Lock() }
 		err := v.runFunc(ctx)
+		if !dag.parallel { dag.antiParallelMutex.Unlock() }
 
 		dag.mu.Lock()
 		defer dag.mu.Unlock()

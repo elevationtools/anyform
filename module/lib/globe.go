@@ -31,7 +31,8 @@ type ConfigLoader interface {
 // Implementations must set PWD=inputDir during template evaluation, which means
 // other paths (like outputDir) may need to be converted to absolute paths.
 type StageStamper interface {
-  Stamp(ctx context.Context, inputDir string, outputDir string) error
+  Stamp(ctx context.Context, stageName string, inputDir string,
+			 outputDir string, logDir string, envVars []string) error
 }
 
 type SubprocessRunner interface {

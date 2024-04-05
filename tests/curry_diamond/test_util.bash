@@ -11,16 +11,6 @@ function runtest() {
   fi
 }
 
-# The timestamp changes so we just strip it off for testing.
-function strip_timestamp() {
-  sed -E 's/^[^ ]+ //g'
-}
-
-function expect_stripped_eq_stdin() {
-  local actual="$1"
-  expect_eq_stdin "$(echo "$actual" | strip_timestamp 2>&1)"
-}
-
 function expect_eq_stdin() {
   local actual="$1"
   local expected

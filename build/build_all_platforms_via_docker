@@ -11,7 +11,7 @@ cd "$(dirname "$(readlink -f "$0")")"
 
 
 function main() {
-  : ${VERSION:=local}
+  : ${ANYFORM_VERSION:=local}
   : ${CONTAINER_REGISTRY:=none}
 
   mkdir -p genfiles genfiles/bin_unversioned genfiles/bin
@@ -19,16 +19,22 @@ function main() {
 
   # build image
   local image_repo
+  local -a common_build_args
+  common_build_args=(
+    "--build-arg=ANYFORM_VERSION=$ANYFORM_VERSION"
+    -f ./Dockerfile ..
+  )
   if [[ "$CONTAINER_REGISTRY" == "" || \
         "$CONTAINER_REGISTRY" == "none" ]]; then
     image_repo="local/anyform"
-    docker build -t "$image_repo:latest" -f ./Dockerfile ..
+    docker build -t "$image_repo:latest" "${common_build_args[@]}"
+ 
   else
     image_repo="$CONTAINER_REGISTRY/anyform"
-    docker buildx build -t "$image_repo:latest" --push \
+    docker buildx build  --push \
       --cache-from "type=registry,ref=${image_repo}:cache" \
       --cache-to "type=registry,ref=${image_repo}:cache,mode=max" \
-      -f ./Dockerfile ..
+      -t "$image_repo:latest" "${common_build_args[@]}"
   fi
 
   # copy built binaries out of image by creating a dummy container
@@ -40,11 +46,11 @@ function main() {
   docker rm "$(< genfiles/container_id)"
   rm -f genfiles/container_id || true
 
-  # rename output binaries with "VERSION" and exe for windows.
+  # rename output binaries with "ANYFORM_VERSION" and exe for windows.
   (
     cd genfiles/bin_unversioned
     for x in anyform-*; do
-      mv "$x" "../bin/$x-$VERSION"
+      mv "$x" "../bin/${x}-$ANYFORM_VERSION"
     done
   )
   (

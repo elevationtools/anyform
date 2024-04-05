@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+#
+# Creates the standard resources in AWS to store terraform state.
+#
+# This requires the following environment variables to be set:
+#  AWS_REGION
+#  S3_BUCKET
+#  DYNAMODB_TABLE
+#
+# Currently, it doesn't make use of any standard Anyform stage environment
+# variables, but it perhaps could in the future.
+
+set -euo pipefail
+
+function main() {
+  local cmd
+  cmd="${1:?}"
+
+  : ${AWS_REGION:?}
+  : ${S3_BUCKET:?}
+  : ${DYNAMODB_TABLE:?}
+
+  case "$cmd" in
+    up|down) "cmd_$cmd" ;;
+    *) echo "Unknown command: $cmd" >&2; exit 1 ;;
+  esac
+}
+
+function cmd_up() {
+  bucket_up
+  dynamodb_table_up
+}
+
+function cmd_down() {
+  bucket_down
+  dynamodb_table_down
+}
+
+function bucket_up() {
+	if bucket_exists; then
+		echo "s3 bucket already exists: $S3_BUCKET"
+	else
+		echo "Creating s3 bucket: $S3_BUCKET"
+		aws s3 mb "s3://$S3_BUCKET"
+    echo "Waiting for bucket creation to take effect"
+    aws s3api wait bucket-exists --bucket "$S3_BUCKET"
+    echo "Bucket ready"
+	fi
+}
+
+function bucket_down() {
+	if bucket_exists; then
+		echo "Deleting s3 bucket: $S3_BUCKET"
+		aws s3 rm --recursive "s3://$S3_BUCKET/"
+		aws s3 rb "s3://$S3_BUCKET"
+	elif bucket_doesnt_exist; then
+		echo "s3 bucket already gone: $S3_BUCKET"
+	else
+		echo "Problems checking on s3 bucket: $S3_BUCKET" >&2
+		return 1
+	fi
+}
+
+function bucket_exists() {
+	aws s3 ls "s3://$S3_BUCKET" &> /dev/null
+  return $?
+}
+
+function bucket_doesnt_exist() {
+	{ aws s3 ls "s3://$S3_BUCKET" 2>&1 || true; } |
+		grep -q NoSuchBucket
+  return $?
+}
+
+function dynamodb_table_up() {
+	if dynamodb_table_exists; then
+		echo "DynamoDB table already exists: $DYNAMODB_TABLE"
+	else
+		echo "Creating DynamoDB table: $DYNAMODB_TABLE"
+		aws dynamodb create-table "--table-name=$DYNAMODB_TABLE" \
+			--attribute-definitions AttributeName=LockID,AttributeType=S \
+			--key-schema AttributeName=LockID,KeyType=HASH \
+			--table-class STANDARD \
+			--provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1
+    aws dynamodb wait table-exists "--table-name=$DYNAMODB_TABLE"
+    echo "DynamoDB table ready"
+	fi
+}
+
+function dynamodb_table_down() {
+	if dynamodb_table_exists; then
+		echo "Deleting DynamoDB table: $DYNAMODB_TABLE"
+	  aws dynamodb delete-table "--table-name=$DYNAMODB_TABLE"
+	elif dynamodb_table_doesnt_exist; then
+		echo "DynamoDB table already gone: $DYNAMODB_TABLE"
+	else
+		echo "Problems checking on DynamoDB table: $DYNAMODB_TABLE" >&2
+		return 1
+	fi
+}
+
+function dynamodb_table_exists() {
+  aws dynamodb describe-table "--table-name=$DYNAMODB_TABLE" &> /dev/null
+  return $?
+}
+
+function dynamodb_table_doesnt_exist() {
+  { ! aws dynamodb describe-table "--table-name=$DYNAMODB_TABLE" 2>&1; } |
+    grep ResourceNotFoundException &> /dev/null
+  return $?
+}
+
+main "$@"
+

@@ -3,8 +3,11 @@ package anyform
 
 import (
 	"errors"
+	"path/filepath"
 	"fmt"
+	"os"
 	"runtime/debug"
+	"time"
 )
 
 // Error wrapper ///////////////////////////////////////////////////////////////
@@ -47,4 +50,44 @@ func WrapError(err error) error {
 		err,
 		&errorWithStack{stackTrace: string(debug.Stack())},
 	)
+}
+
+func WriteFile(filePath string, data []byte, executable bool) error {
+	err := MkdirAll(filepath.Dir(filePath))
+	if err != nil { return err }
+	var perm os.FileMode
+	if executable {
+		perm = 0770
+	} else {
+		perm = 0660 
+	}
+	err = os.WriteFile(filePath, data, perm)
+	if err != nil {
+		return Errorf("writing file '%v': %w", filePath, err)
+	}
+	return nil
+}
+
+func MkdirAll(path string) error {
+  err := os.MkdirAll(path, 0770)
+	if err != nil {
+		return Errorf("mkdir -p '%v': %w", path, err)
+	}
+	return nil
+}
+
+func TimestampUtcSmall() string {
+	// TODO(performance):  creating a loc every time seems inefficient (golang
+	// timestamp formatting, RAWR!)
+	loc, err := time.LoadLocation("UTC")
+	if err != nil { panic(err) }
+	return time.Now().In(loc).Format("20060102150405") + "Z"
+}
+
+func TimestampUtcMedium() string {
+	// TODO(performance):  creating a loc every time seems inefficient (golang
+	// timestamp formatting, RAWR!)
+	loc, err := time.LoadLocation("UTC")
+	if err != nil { panic(err) }
+	return time.Now().In(loc).Format("2006-01-02T15:04:05") + "Z"
 }

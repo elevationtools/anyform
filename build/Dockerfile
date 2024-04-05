@@ -1,6 +1,8 @@
 
 FROM ubuntu:22.04
 
+ARG ANYFORM_VERSION=0.0.0-unsetdocker
+
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update
 RUN apt-get -y install make curl
@@ -25,5 +27,5 @@ RUN mako -C deps/golang && \
 COPY /module ./module
 COPY /tests ./tests
 RUN make test
-RUN mako -C ./module/cli all_platforms
+RUN ANYFORM_VERSION=$ANYFORM_VERSION mako -j4 -C ./module/cli all_platforms
 
