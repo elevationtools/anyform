@@ -26,6 +26,13 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 ## Unorganized Todos
 
+- After stamping, remove any files that were there from a previous stamp but not
+  this one.  Alternatively, just fully delete the stamp dir and recreate it.
+
+- Better error when anyform.jsonnet file not found.
+
+- "make -C" like feature to chdir without having to chdir.
+
 - Feature: `anyform markdown STAGE_NAME` allows forceably skipping a step.
   Creates the state file.
 
@@ -58,4 +65,6 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 - Consider creating the output dir and stage output dirs automatically so `ctl`
   scripts don't have to.
+
+- Option to select and filter stages.
 
