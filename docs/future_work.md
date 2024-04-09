@@ -26,6 +26,13 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 ## Unorganized Todos
 
+- Restamp on `down` in some scenarios: e.g. impl has changed.
+
+- `anyform env` to print environment used for running stages.
+
+- Better name than "config" for the application specific configuration passed to
+  stages within the cell's `anyform.jsonnet` file.
+
 - After stamping, remove any files that were there from a previous stamp but not
   this one.  Alternatively, just fully delete the stamp dir and recreate it.
 
@@ -65,6 +72,7 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 - Consider creating the output dir and stage output dirs automatically so `ctl`
   scripts don't have to.
+  - Also delete the standard output dir during "down".
 
 - Option to select and filter stages.
 
