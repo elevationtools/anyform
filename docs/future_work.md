@@ -28,6 +28,8 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 - Restamp on `down` in some scenarios: e.g. impl has changed.
 
+- Exponential backoff retries for stages, configurable in anyform.jsonnet.
+
 - `anyform env` to print environment used for running stages.
 
 - Better name than "config" for the application specific configuration passed to
@@ -75,4 +77,10 @@ Solving the following issues with `gomplate` would be helpful for Anyform
   - Also delete the standard output dir during "down".
 
 - Option to select and filter stages.
+
+- Add https://atmos.tools/ to alternatives comparison.
+
+- Consider having stage specific configs, and then check if the config has
+  actually changed for a stage, instead of just checking the timestamps like GNU
+  make.
 
