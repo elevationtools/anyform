@@ -8,23 +8,25 @@
 
 ### Examples
 
-#### Hello world
-TODO
+#### Narrated Example: [`/docs/narrated_example.md`](/docs/narrated_example.md)
+This is a "words-only" example, with code snippets but no runnable code.  It is
+probably the best place to start learning to see what using Anyform looks like.
 
 #### Working example: [`//tests/curry_diamond`](/tests/curry_diamond)
-This is a working example showing what Anyform can do and is also an integration
-test so you know it actually works!  Read the README, run the integration test,
-explore the files - especially the generated files.
-
-#### Narrated Example: [`/docs/narrated_example.md`](/docs/narrated_example.md)
-This is a "words-only" example, with code snippets but no runnable code.
+This is a basic working example that is also an integration test so you know it
+actually works!  Read the README, run the integration test, explore the files -
+especially the generated files.
 
 #### AWS EKS example
-TODO
 
+TODO: coming soon, an example of using Anyform to easily deploy multiple AWS EKS
+cells and supporting:
 
-### Getting Started / Walkthrough
-TODO
+- PersistentVolumes backed by AWS EBS.
+- Ingress load balancers backed by AWS Application Load Balancers.
+  - Includes automatic TLS certificate creation.
+  - Includes automatic Route53 DNS entry creation.
+- Cluster autoscaling backed by the standard kube autoscaler (not Karpenter).
 
 
 ### Core Concepts / Terminology
@@ -58,21 +60,23 @@ To bring up a new deployment, one should only need to create a new one of these
 files, perhaps copying an existing one then tweak the settings in it for the
 given deployment, and then run `anyform up`.
 
-#### Deployment Dir
-The directory containing the deployment config (`anyform.jsonnet`).  Upon
-running `anyform up`, this directory will also contain generated files
-including:
+#### Deployment Dir (`./`)
+The directory containing the deployment config (`anyform.jsonnet`). Also the
+working directory when running `anyform`.  Upon running `anyform up`, this
+directory will also contain generated files including:
 
-##### - Output Dir (`./output/`)
+##### Output Dir (`./output/`)
 Stage outputs that should be checked into version control.  Stage's are
 recommended to output into `output/STAGE_NAME/` but this is not a requirement
 and there are legitimate reasons to do differently.  Putting output outside the
 output dir is highly discouraged.
 
-##### - Genfiles Dir (`./genfiles`)
+##### Genfiles Dir (`./genfiles`)
 Outputs and temporary files that should NOT be checked into version control.
+This includes the "Stage Stamp Directories" discussed below, and stage
+stdout/stderr logs.
 
-#### DAG Template Directory
+#### DAG Template Directory (aka the "impl" dir)
 The directory containing stage template directories. Stage template directories
 must live directly under the DAG template directory.
 
@@ -80,7 +84,10 @@ Usually, the DAG template directory will also contain a Jsonnet library to be
 imported by the deployment config.  By convention, this is called
 `anyform.libsonnet`, but can be called anything.
 
-#### Stage Template Directories
+This directory can also contain files used by multiple stages, for example, a
+file containing a library of named gomplate templates.
+
+#### Stage Template Directories (aka the "stage impl" dir)
 Where the code for a stage actually lives.  Every file is considered a gomplate
 template, unless otherwise configured. `.gomplate.yaml` and `.gomplateignore`
 can live in the directory.  This can be important for things like binaries or
@@ -88,15 +95,14 @@ Helm charts, since they also use golang text templating.
 
 #### Stage Stamp Directories
 Each stage is stamped via gomplate to its own stage stamp directory. These live
-in the deployment directory under genfiles `./genfiles/STAGE_NAME/stamp`. In
-some cases it's possible to use the stamp directory directly. For example, with
-Terraform this is the case, the `terraform` CLI can be used in the stage stamp
-directory.  Not all stages support this though, as some will expect to be run
-with environment variables set by Anyform.
+in the deployment directory under `./genfiles/STAGE_NAME/stamp`. In some cases
+it's possible to use the stamp directory directly. For example, with Terraform
+this is the case, the `terraform` CLI can be used in the stage stamp directory.
+This is useful for advanced operations like `terraform force-unlock`.
 
-To make your stamped directory usable directly, like the terraform stage, be
-sure to only use anyform specific environment variables during stamping, and not
-while running the stage `ctl`.
+To make a stage implementation able to be run directly form the stamp dir,
+do not access `ANYFORM_*` environment variables during run-time, only
+during stamp-time via gomplate templating.
 
 Note that stages aren't stamped until AFTER all dependency stages have run
 successfully.  This means dependency stage outputs (both in `./genfiles/` an
@@ -121,23 +127,28 @@ user.  Any other value than exactly `false` should be considered true.
 
 `ctl` can be written in any language.
 
-
 #### Stage Environment Variables
 
-The following environment variables are set during stage stamp time, and `ctl`
-run time.
+The following environment variables are set during stage stamp-time and
+run-time. To access during stamp time, use gomplate standard approach:
 ```
-ANYFORM_STAGE_NAME
-ANYFORM_STAGE_STAMP_DIR
+{{ .Env.FOO }}
+```
+
+- `ANYFORM_STAGE`
+  - The name of the current stage.
+
+The following are absolute paths to the directories and files described above.
+The `*_STAGE_*` variants are the stage specific subdirectories under the non
+`*_STAGE_*` variants.
+```
 ANYFORM_CONFIG_JSON_FILE
 ANYFORM_GENFILES
 ANYFORM_IMPL_DIR
 ANYFORM_OUTPUT_DIR
+ANYFORM_STAGE_GENFILES
+ANYFORM_STAGE_IMPL_DIR
+ANYFORM_STAGE_OUTPUT_DIR
+ANYFORM_STAGE_STAMP_DIR
 ```
-
-> To access during stamp time, use gomplate standard approach: `{{ .Env.FOO }}`
-
-
-### Detailed Specification/Reference
-TODO
 
