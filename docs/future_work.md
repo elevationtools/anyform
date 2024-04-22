@@ -5,28 +5,8 @@
 
 ## Future Work
 
-### Issues with `gomplate`
 
-Solving the following issues with `gomplate` would be helpful for Anyform
-
-- Calling templates in another file is awkward/boilerplate heavy.
-  ```golang
-  {{ $_ := file.Read "otherfile.gmp" | tpl }}
-  {{ tmpl.Exec "otherfiletmpl" (merge (dict "foo" "bar") .) }}
-  ```
-
-- `--input-dir` and `--output-dir` has problematic semantics.  One of these two
-  options would solve it:
-    - Option 1) Remove files in `--output-dir` that aren't in `--input-dir` to clean up
-      previous runs automatically without having to `rm -rf` the whole output dir.
-    - Option 2) Make the timestamps of the output files match the timestamps of
-      the input files.  This would allow `rm -rf` to work while not confusing
-      `make`'s timestamp checking.
-
-
-## Unorganized Todos
-
-### Interface / Breaking Changes
+### Interface Changes / Breaking Changes
 
 - Allow configuring a different command than just `./ctl up|down` for stages.
 
@@ -38,6 +18,7 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 - Better name than "config" for the application specific configuration passed to
   stages within the cell's `anyform.jsonnet` file.
+
 
 ### Additions / Non-breaking Changes
 
@@ -103,3 +84,21 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 - Add https://atmos.tools/ to alternatives comparison.
 
+
+### Issues with `gomplate`
+
+Solving the following issues with `gomplate` would be helpful for Anyform
+
+- Calling templates in another file is awkward/boilerplate heavy.
+  ```golang
+  {{ $_ := "$REPO_ROOT/foo/bar" | env.ExpandEnv | filepath.FromSlashes | file.Read | tpl . }}
+  {{ tmpl.Exec "tmpl_from_other_file" . }}
+  ```
+
+- `--input-dir` and `--output-dir` has problematic semantics.  One of these two
+  options would solve it:
+    - Option 1) Remove files in `--output-dir` that aren't in `--input-dir` to clean up
+      previous runs automatically without having to `rm -rf` the whole output dir.
+    - Option 2) Make the timestamps of the output files match the timestamps of
+      the input files.  This would allow `rm -rf` to work while not confusing
+      `make`'s timestamp checking.
