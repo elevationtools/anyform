@@ -1,3 +1,4 @@
 
-**/genfiles
-.vscode/
+**/genfiles/
+**/.vscode/
+
