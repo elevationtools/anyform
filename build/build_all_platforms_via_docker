@@ -7,22 +7,20 @@
 # - Login to the registry (i.e. "docker login ...")
 set -euo pipefail
 
-cd "$(dirname "$(readlink -f "$0")")"
-
-
 function main() {
   : ${ANYFORM_VERSION:=local}
   : ${CONTAINER_REGISTRY:=none}
 
+	cd "$(dirname "$(readlink -f "$0")")"
   mkdir -p genfiles genfiles/bin_unversioned genfiles/bin
-
 
   # build image
   local image_repo
   local -a common_build_args
   common_build_args=(
+		--progress=plain
     "--build-arg=ANYFORM_VERSION=$ANYFORM_VERSION"
-    -f ./Dockerfile ..
+    -f ./Dockerfile "$REPO_ROOT"
   )
   if [[ "$CONTAINER_REGISTRY" == "" || \
         "$CONTAINER_REGISTRY" == "none" ]]; then
@@ -31,7 +29,7 @@ function main() {
  
   else
     image_repo="$CONTAINER_REGISTRY/anyform"
-    docker buildx build  --push \
+    docker buildx build --push \
       --cache-from "type=registry,ref=${image_repo}:cache" \
       --cache-to "type=registry,ref=${image_repo}:cache,mode=max" \
       -t "$image_repo:latest" "${common_build_args[@]}"
