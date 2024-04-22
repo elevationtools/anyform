@@ -14,8 +14,8 @@ This gives an example of the recommended usage pattern of Anyform.
 > [`//tests/curry_diamond/README.md`](/tests/curry_diamond/README.md)
 
 Imagine a user needs to bring up infrastructure in a project cleverly called "My
-Infra".  They need to bring this up in 2 separate regions, `eu-north-1` and
-`us-east-1` in production (for simplicity there's no staging/dev/etc in this
+Infra".  They need to bring this up in 2 separate regions, `europe` and
+`namerica` in production (for simplicity there's no staging/dev/etc in this
 example because different environments work the same as different locations).
 
 Assume the user has a repo that looks like the following to model this:
@@ -23,9 +23,9 @@ Assume the user has a repo that looks like the following to model this:
 $MY_REPO
 ├── cells
 │   └── prod
-│       ├── eu-north-1
+│       ├── europe
 │       │      └── my_infra
-│       └── us-east-1
+│       └── namerica
 │              └── my_infra
 └── infra_lib
     ├── my_infra
@@ -35,7 +35,7 @@ $MY_REPO
 
 - `infra_lib` contains libraries that can be called to bring up infrastructure.
 - `cells` contains directories for each tangible instantiation of
-infrastructure.  (e.g. `prod` deployed to `eu-north-1`).  Each of the leaf cell
+infrastructure.  (e.g. `prod` deployed to `europe`).  Each of the leaf cell
 directories calls into `infra_lib` and passes it the specific configuration
 needed for that cell (other equivalent terms: cluster, deployment, etc).
 
@@ -48,19 +48,19 @@ which would then look something like this:
 
 ```
 $MY_REPO/cells/prod
-├── eu-north-1
+├── europe
 │   ├── cell_config.jsonnet
 │   └── my_infra
 │       └── anyform.jsonnet
-└── us-east-1
+└── namerica
     ├── cell_config.jsonnet
     └── my_infra
         └── anyform.jsonnet
 ```
 
-To bring up and down the "My Infra" project in `eu-north-1`, the user would then:
+To bring up and down the "My Infra" project in `europe`, the user would then:
 ```
-cd $MY_REPO/cells/prod/eu-north-1/my_infra
+cd $MY_REPO/cells/prod/europe/my_infra
 
 anyform up
 # Now the infra is up.
@@ -69,10 +69,40 @@ anyform down
 # Now the infra is down again.
 ```
 
-And that's it! Upon successfully running `anyform up` the directory would look
+And that's it! The config files would looks something like:
+
+`$MY_REPO/cells/prod/europe/my_infra/anyform.jsonnet`
+```
+(import 'infra_lib/my_infra/anyform.libsonnet') {
+  config+: (import '../cell_config.jsonnet') {
+    my_infra+: {
+      aws+: {
+        account: 12345,
+        region: 'eu-north-1',
+      },
+
+      bar: 'override a value',
+    },
+  },
+}
+```
+
+`$MY_REPO/cells/prod/europe/cell_config.jsonnet`
+```
+{
+  cell: {
+    name: 'europe',
+  },
+}
+```
+
+(The content of `infra_lib/my_infra/anyform.libsonnet` is discussed
+later.)
+
+Upon successfully running `anyform up` the directory would look
 like the following:
 ```
-$MY_REPO/cells/prod/eu-north-1/my_infra
+$MY_REPO/cells/prod/europe/my_infra
 ├── anyform.jsonnet
 ├── output/...
 └── genfiles/...
@@ -90,7 +120,7 @@ contains temporary files, caching, etc.
 To make the above work, the following must first be created.  This only needs to
 be done once and then be used across multiple cells:
 ```
-$MY_REPO/infra_lib/my_infra (a.k.a impl_dir)
+$MY_REPO/infra_lib/my_infra
 ├── anyform.libsonnet
 ├── stage_one
 │   ├── ctl
@@ -105,41 +135,37 @@ $MY_REPO/infra_lib/my_infra (a.k.a impl_dir)
 which actually brings up infrastructure. It can be Terraform, bash, a golang
 binary, anything really.
 
-`$STAGE_NAME/ctl` is an executable file which anyform calls to bring the stage's
-infrastructure up or down.
+`THE_STAGE_NAME/ctl` is an executable file that you provide.  anyform calls this
+as `./ctl up` or `./ctl down` to bring the stage up or down.
 - > See [`/common_stage_utilities.md`](/common_stage_utilities.md) to avoid
   boilerplate for common stage types.
 
 `anyform.libsonnet` would look something like:
 ```jsonnet
-(import 'anyform/jsonnet_lib/orchestrator.libsonnet')(std.thisFile) {
+local anyform = import 'anyform/anyform.libsonnet'
+
+anyform.dag(std.thisFile) {
   stages: {
-    stage_one: {},
-    another_stage: {
-      depends_on: ['stage_one'],
-    },
+    stage_one: anyform.stage(),
+    another_stage: anyform.stage(['stage_one']),  // <- depends on stage_one
   },
 
-  // This config is made available to stages via $ANYFORM_CONFIG_JSON_FILE
+  // This config is made available to stages during both stamp-time and
+  // run-time.  Anyform doesn't care how this looks, it just passes it along.
   config: {
     // Cells must override this with the cell's `cell_config.jsonnet`.
+    // (jsonnet lacks types so these error assertions are used instead).
     cell: error 'required',
 
-    foo: {
-      bar: 'a_default_value',
-      baz: error 'a required value that must be specified per cell',
-    },
-  },
-}
-```
+    my_infra: {
+      aws: {
+        account: error 'required',
+        region: error 'required',
+      },
 
-`$MY_REPO/cells/prod/eu-north-1/my_infra/anyform.jsonnet` would then
-look something like...
-```jsonnet
-(import 'infra_lib/my_infra/anyform.libsonnet') {
-  config: {
-    cell: import '../cell_config.jsonnet',
-    foo: { baz: 'cheese' },
+      bar: 'a default value',
+      baz: 'another default value',
+    },
   },
 }
 ```
@@ -149,14 +175,15 @@ look something like...
 The `./genfiles/...` directory looks something like:
 
 ```
-$MY_REPO/cells/prod/eu-north-1/my_infra/genfiles/
+$MY_REPO/cells/prod/europe/my_infra/genfiles/
 ├── stage_one
 │   ├── stamp
 │   │   ├── ctl
 │   │   └── ...etc...
 │   ├── state
 │   └── logs
-│       └── stdout_stderr
+│       ├── 20240422151741Z-ctl-stdout_stderr
+│       └── 20240422151741Z-stamp-stdout_stderr
 │
 └── another_stage
     └── ...same as stage_one above...
@@ -172,5 +199,7 @@ The `state` tracks whether it's most recently been brought up or down, and the
 modification time tracks when this happened, which is used to avoid repeating
 the operation if nothing has changed since the last time run.
 
-`logs/stdout_stderr` contains the stdout and stderr (merge together) of the
-latest run.
+`logs/TIMESTAMP-{ctl,stamp}-stdout_stderr` contains the stdout and stderr (merge
+together) of the latest run, with the stamp-time and run-time logs split into
+different files.
+
