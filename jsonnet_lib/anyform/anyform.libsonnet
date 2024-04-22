@@ -23,7 +23,7 @@ local dirname = import 'elevation/dirname.libsonnet';
   },
 
   // `depends_on` is a list of stage names.
-  stage(depends_on): {
+  stage(depends_on=[]): {
     depends_on: depends_on,
   },
 }

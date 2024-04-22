@@ -34,6 +34,7 @@ type Stage struct {
 
   stateFilePath string
 	stageImplDir string
+	stageOutputDir string
 	stampDir string
 	ctlPath string
 	logDir string
@@ -56,18 +57,22 @@ func NewStage(name string, globe *Globe,
   s.stateFilePath = 
       filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "state")
 	s.stageImplDir = filepath.Join(s.orchestratorSpec.ImplDir, s.Name)
+	s.stageOutputDir = filepath.Join(s.globe.Config.Orchestrator.OutputDir, s.Name)
 	s.stampDir = filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name, "stamp")
 	s.ctlPath = filepath.Join(s.stampDir, CtlFileName)
 	s.logDir = filepath.Join(
 			s.globe.Config.Orchestrator.GenfilesDir, s.Name, "logs")
   s.envVars = []string{
 		// DOCS(STAGE_ENVIRONMENT_VARIABLES)
-    "ANYFORM_STAGE_NAME=" + s.Name,
-    "ANYFORM_STAGE_STAMP_DIR=" + AbsJoin(s.stampDir),
-    "ANYFORM_CONFIG_JSON_FILE=" + AbsJoin(s.globe.Config.Orchestrator.ConfigJsonFile),
-    "ANYFORM_GENFILES=" + AbsJoin(s.globe.Config.Orchestrator.GenfilesDir),
-    "ANYFORM_IMPL_DIR=" + AbsJoin(s.orchestratorSpec.ImplDir),
-    "ANYFORM_OUTPUT_DIR=" + AbsJoin(s.globe.Config.Orchestrator.OutputDir),
+    "ANYFORM_STAGE=" + s.Name,
+    "ANYFORM_STAGE_GENFILES=" + MustAbsPath(filepath.Join(s.globe.Config.Orchestrator.GenfilesDir, s.Name)),
+    "ANYFORM_STAGE_IMPL_DIR=" + MustAbsPath(s.stageImplDir),
+    "ANYFORM_STAGE_OUTPUT_DIR=" + MustAbsPath(s.stageOutputDir),
+    "ANYFORM_STAGE_STAMP_DIR=" + MustAbsPath(s.stampDir),
+    "ANYFORM_CONFIG_JSON_FILE=" + MustAbsPath(s.globe.Config.Orchestrator.ConfigJsonFile),
+    "ANYFORM_GENFILES=" + MustAbsPath(s.globe.Config.Orchestrator.GenfilesDir),
+    "ANYFORM_IMPL_DIR=" + MustAbsPath(s.orchestratorSpec.ImplDir),
+    "ANYFORM_OUTPUT_DIR=" + MustAbsPath(s.globe.Config.Orchestrator.OutputDir),
   }
   return s
 }
@@ -89,6 +94,9 @@ func (s *Stage) UpImpl(ctx context.Context) error {
 
 	s.stdout("stamping")
   err := s.Stamp(ctx)
+  if err != nil { return err }
+
+  err = MkdirAll(s.stageOutputDir)
   if err != nil { return err }
 
 	s.stdout("running 'ctl up'")
@@ -174,15 +182,13 @@ func (s *Stage) maxImplFileModTime() (time.Time, error) {
 func (s *Stage) Stamp(ctx context.Context) error {
   slog.Debug("stage stamping", "stage", s.Name)
   err := MkdirAll(s.stampDir)
-  if err != nil {
-		return Errorf("Making stage stamp dir '%v': %w", s.stampDir, err)
-  }
+  if err != nil { return err }
   return s.globe.StageStamper.Stamp(
 			ctx, s.Name, s.stageImplDir, s.stampDir, s.logDir, s.envVars)
 }
 
-func AbsJoin(elem ...string) string {
-  res, err := filepath.Abs(filepath.Join(elem...))
+func MustAbsPath(path string) string {
+  res, err := filepath.Abs(path)
   if err != nil { panic(err) }
   return res
 }
@@ -239,6 +245,11 @@ func (s *Stage) DownImpl(ctx context.Context) error {
 
   err = util.ToJSONFile(StageStateFile{LastCommand: "down"}, s.stateFilePath)
   if err != nil { return Errorf("writing '%v': %w", s.stateFilePath, err) }
+
+	err = os.RemoveAll(s.stageOutputDir)
+	if err != nil {
+		s.stderr("WARNING: error removing output dir (ignoring): %v", err)
+	}
  
 	s.stdout("done")
   return nil
@@ -247,14 +258,14 @@ func (s *Stage) DownImpl(ctx context.Context) error {
 // Print to stdout.
 // Already adds prefix and newline.
 func (s *Stage) stdout(format string, args... any) {
-	s.fprintf(os.Stdout, format, args...)
+	s.fprintfln(os.Stdout, format, args...)
 }
 
 func (s *Stage) stderr(format string, args... any) {
-	s.fprintf(os.Stderr, format, args...)
+	s.fprintfln(os.Stderr, format, args...)
 }
 
-func (s *Stage) fprintf(file *os.File, format string, args... any) {
+func (s *Stage) fprintfln(file *os.File, format string, args... any) {
 	args = append([]any{s.Name}, args...)
 	fmt.Fprintf(file, "[%v] " + format + "\n", args...)
 }

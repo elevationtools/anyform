@@ -3,6 +3,7 @@ package anyform
 import (
 	"context"
 	"log/slog"
+	"fmt"
 	"os"
 	"path/filepath"
   "time"
@@ -132,9 +133,29 @@ func (orc* Orchestrator) Down(ctx context.Context) error {
     })
   }
 
-  return dag.Run(ctx, !orc.globe.Config.Interactive)
+  err := dag.Run(ctx, !orc.globe.Config.Interactive)
+	if err != nil { return err }
+
+	err = os.RemoveAll(orc.globe.Config.Orchestrator.OutputDir)
+	if err != nil {
+		orc.stderr("WARNING: unable to remove output directory: %v", err)
+	}
+
+	return nil
 }
 
 func (orc* Orchestrator) Clean(ctx context.Context) error {
   return os.RemoveAll(orc.globe.Config.Orchestrator.GenfilesDir)
+}
+
+func (orc *Orchestrator) stdout(format string, args... any) {
+	orc.fprintfln(os.Stdout, format, args...)
+}
+
+func (orc *Orchestrator) stderr(format string, args... any) {
+	orc.fprintfln(os.Stderr, format, args...)
+}
+
+func (orc *Orchestrator) fprintfln(file *os.File, format string, args... any) {
+	fmt.Fprintf(file, "[orchestrator] " + format + "\n", args...)
 }
