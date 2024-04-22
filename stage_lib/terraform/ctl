@@ -14,14 +14,11 @@ this_dir="$(dirname "$(readlink -f "$0")")"
 function main() {
   cmd="${1:?}"
 
-  : ${ANYFORM_STAGE_NAME:?}
+  : ${ANYFORM_STAGE:?}
   : ${ANYFORM_OUTPUT_DIR:?}
   : ${ANYFORM_STAGE_STAMP_DIR:?}
 
   : ${INTERACTIVE:=true}
-
-  local stage_output_dir
-  stage_output_dir="$ANYFORM_OUTPUT_DIR/$ANYFORM_STAGE_NAME"
 
   case "$cmd" in
     up|down) "cmd_$cmd" ;;
@@ -30,19 +27,18 @@ function main() {
 }
 
 function common_init() {
-  if [ -e "$stage_output_dir/.terraform.lock.hcl" ]; then
-    cp -at "$ANYFORM_STAGE_STAMP_DIR" "$stage_output_dir/.terraform.lock.hcl"
+  if [ -e "$ANYFORM_STAGE_OUTPUT_DIR/.terraform.lock.hcl" ]; then
+    cp -at "$ANYFORM_STAGE_STAMP_DIR" "$ANYFORM_STAGE_OUTPUT_DIR/.terraform.lock.hcl"
   fi
   terraform_wrapper init $( [[ "$INTERACTIVE" != false ]] || echo '-input=false' )
-  mkdir -p "$stage_output_dir"
-  cp -at "$stage_output_dir" ".terraform.lock.hcl"
+  cp -at "$ANYFORM_STAGE_OUTPUT_DIR" ".terraform.lock.hcl"
 }
 
 function cmd_up() {
   common_init
 
   local outfile
-  outfile="$stage_output_dir/output.json"
+  outfile="$ANYFORM_STAGE_OUTPUT_DIR/output.json"
   echo "Running 'terraform apply'"
   terraform_wrapper apply \
     $( [[ "$INTERACTIVE" != false ]] || echo '-input=false -auto-approve' )

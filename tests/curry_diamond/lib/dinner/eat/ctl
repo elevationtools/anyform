@@ -6,7 +6,6 @@ outfile="$ANYFORM_OUTPUT_DIR/nomnom.txt"
 function run_up() {
   echo "Nom nom nom"
 
-  mkdir -p "$(dirname "$outfile")"
   {
     echo "Eating a {{ .cfg.day }} night dinner prepped by:"
     {

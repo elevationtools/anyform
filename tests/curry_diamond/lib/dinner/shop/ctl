@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 . "$ANYFORM_IMPL_DIR/common.sh"
 
-outfile="$ANYFORM_OUTPUT_DIR/$ANYFORM_STAGE_NAME/output.json"
+outfile="$ANYFORM_STAGE_OUTPUT_DIR/output.json"
 
 function run_up() {
   echo "Walking to the store"
   echo "Filling up the cart"
 
-  mkdir -p "$(dirname "$outfile")"
   sed 's/^    //g' <<EOF | jq > "$outfile"
     {
       "vegetables": ["eggplant", "lemongrass"],
