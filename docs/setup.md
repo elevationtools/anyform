@@ -25,7 +25,7 @@ Requirements:
 - GNU make
 - curl
 - bash
-- standard unix CLI tools like: cp, rm, find, etc.
+- Basic POSIX commands like: cp, rm, find, etc.
 
 Checkout the desired version:
 ```bash
