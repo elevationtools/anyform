@@ -26,61 +26,80 @@ Solving the following issues with `gomplate` would be helpful for Anyform
 
 ## Unorganized Todos
 
-- Restamp on `down` in some scenarios: e.g. impl has changed.
+### Interface / Breaking Changes
 
-- Exponential backoff retries for stages, configurable in anyform.jsonnet.
+- Allow configuring a different command than just `./ctl up|down` for stages.
 
-- `anyform env` to print environment used for running stages.
+- Consider having stage specific configs, and then check if the config has
+  actually changed for a stage, instead of just checking the timestamps like GNU
+  make.
+
+- Consider removing the noise `_DIR` suffix from environment variables.
 
 - Better name than "config" for the application specific configuration passed to
   stages within the cell's `anyform.jsonnet` file.
 
+### Additions / Non-breaking Changes
+
+#### Bug/Quirk Fixes
+
+- signal handling for subprocesses
+
+#### Behavior Improvements
+
+- Exponential backoff retries for stages, configurable in anyform.jsonnet.
+
+- If a stage hasn't even been brought up at all, then assume it's down.  Perhaps
+  guard with a flag like "--assume-down".
+
+- Support "one shot" stages that shouldn't be run again if they've already
+  succeeded.
+  - Support manually forcing them to run again.
+  - Perhaps add a new state, or new field in the state file, which if it's set
+    then don't run the stage.
+
+- Restamp on `down` in some scenarios: e.g. impl has changed.
+
 - After stamping, remove any files that were there from a previous stamp but not
   this one.  Alternatively, just fully delete the stamp dir and recreate it.
 
-- Better error when anyform.jsonnet file not found.
-
-- "make -C" like feature to chdir without having to chdir.
-
-- Feature: `anyform markdown STAGE_NAME` allows forceably skipping a step.
-  Creates the state file.
-
-- Provide example of breaking a terraform lock:
-  https://developer.hashicorp.com/terraform/cli/commands/force-unlock
+- Option to select and filter stages.
+  - Idea: `anyform mark (up|down) STAGE_NAME` allows forceably skipping a step.
+    Creates the state file.
 
 - Feature: `anyform down --skip-failures` to just optimistically try to bring
   down all stages, even if there was a failure while trying to bring down a
   child stage.
-
-- Reconsider split of Config, Spec, and InnerConfig.
-  - Especially that OrchestratorSpecFile is in AnyformConfig.
-
-- Add configo as a stamper.
-
-- Allow configuring a different command than just `./ctl up|down` for stages.
-
-- Better logging/error handling.
-  - Maybe a more natural way to call commands and have them echoed with output,
-    similar to GNU make.
-  - Handle error output from StageStampers better (stdout/stderr for CLI based
-    ones)
 
 - Think about how to handle a stage calling a different orchestrator to support
   nested/modular anyforms.
 
 - Enable controlling parallelism, at a minimum full on and full off.
 
-- signal handling for subprocesses
+- Add configo as a stamper.
 
-- Consider creating the output dir and stage output dirs automatically so `ctl`
-  scripts don't have to.
-  - Also delete the standard output dir during "down".
+- "make -C" like feature to chdir without having to chdir.
 
-- Option to select and filter stages.
+#### Printing/Logging Improvements
+
+- Tee Stage.stdout/stderr to stage log file.
+
+- Consider outputting error messages outside the context of a stage to somewhere
+  other than stdout/stderr.
+
+- `anyform env $stage_name` prints environment used for running stages.
+
+#### Internal Code Clean-up
+
+- Reconsider split of Config, Spec, and InnerConfig.
+  - Especially that OrchestratorSpecFile is in AnyformConfig.
+
+- Better error when anyform.jsonnet file not found.
+
+#### Documentation
+
+- Provide example of breaking a terraform lock:
+  https://developer.hashicorp.com/terraform/cli/commands/force-unlock
 
 - Add https://atmos.tools/ to alternatives comparison.
-
-- Consider having stage specific configs, and then check if the config has
-  actually changed for a stage, instead of just checking the timestamps like GNU
-  make.
 
