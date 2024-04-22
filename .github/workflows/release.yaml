@@ -28,14 +28,13 @@ jobs:
         run: |
           git submodule update --init --recursive
 
-      - name: Cross compile in docker container
+      - name: Cross compile and integration test in docker container
         run: |
           . activate.bash
           docker buildx create --name=buildcontainer --driver=docker-container --use --bootstrap
           echo "${{ secrets.GITHUB_TOKEN }}" |
             docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          CONTAINER_REGISTRY=ghcr.io/elevationtools \
-            ANYFORM_VERSION="${{ github.ref_name }}" mako -C build github
+          ANYFORM_VERSION="${{ github.ref_name }}" mako -C build github
 
       - name: Create release
         env:
