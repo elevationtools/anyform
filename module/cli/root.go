@@ -85,10 +85,10 @@ func InitRoot(orc *anyform.Orchestrator, orcErr error) *cobra.Command {
   rootCmd.AddCommand(&cobra.Command{
     Use:   "version",
     Short: "Print the version.",
-    RunE: RunEWrapper(orc, orcErr, func(cmd *cobra.Command, args []string) error {
+    RunE: func(cmd *cobra.Command, args []string) error {
       fmt.Printf("Anyform %v\n", AnyformVersion)
       return nil
-    }),
+    },
   })
 
   return rootCmd
