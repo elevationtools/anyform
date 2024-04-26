@@ -15,13 +15,25 @@ func InitMark(orc *anyform.Orchestrator, orcErr error, rootCmd *cobra.Command) {
     Long: "Force assuming a stage is in a given state.",
   }
 
+  stageNames := []string{}
+  if orc != nil {
+    for stageName, _ := range orc.Stages {
+      stageNames = append(stageNames, stageName)
+    }
+  }
+
   markCommon := func(state string) *cobra.Command {
     return &cobra.Command{
-      Use: state,
+      Use: fmt.Sprintf("%v stage [stage...]", state),
       Long: fmt.Sprintf("Force assuming the stage is %v.", state),
       SilenceUsage: true,
       SilenceErrors: false,
-      Args: cobra.MinimumNArgs(1),
+      ValidArgsFunction: func(cmd *cobra.Command, args []string,
+                              toComplete string) (
+          []string, cobra.ShellCompDirective){
+        return stageNames, cobra.ShellCompDirectiveDefault
+      },
+      Args: cobra.MatchAll(cobra.MinimumNArgs(1), cobra.OnlyValidArgs),
       RunE: RunEWrapper(orc, orcErr, func(cmd *cobra.Command, args []string) error {
         stages := []*anyform.Stage{}
         for _, stageName := range args {
