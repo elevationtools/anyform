@@ -103,8 +103,8 @@ func (s *Stage) UpImpl(ctx context.Context) error {
   err = s.RunStampedCtl(ctx, "up")
   if err != nil { return err }
 
-  err = util.ToJSONFile(StageStateFile{LastCommand: "up"}, s.stateFilePath)
-  if err != nil { return Errorf("writing %v: %w", s.stateFilePath, err) }
+  err = s.Mark("up")
+  if err != nil { return err }
   
 	s.stdout("done")
   return nil
@@ -243,8 +243,8 @@ func (s *Stage) DownImpl(ctx context.Context) error {
   err = s.RunStampedCtl(ctx, "down")
   if err != nil { return err }
 
-  err = util.ToJSONFile(StageStateFile{LastCommand: "down"}, s.stateFilePath)
-  if err != nil { return Errorf("writing '%v': %w", s.stateFilePath, err) }
+  err = s.Mark("down")
+  if err != nil { return err }
 
 	err = os.RemoveAll(s.stageOutputDir)
 	if err != nil {
@@ -252,6 +252,12 @@ func (s *Stage) DownImpl(ctx context.Context) error {
 	}
  
 	s.stdout("done")
+  return nil
+}
+
+func (s *Stage) Mark(lastCommand string) error {
+  err := util.ToJSONFile(StageStateFile{LastCommand: lastCommand}, s.stateFilePath)
+  if err != nil { return Errorf("writing '%v': %w", s.stateFilePath, err) }
   return nil
 }
 

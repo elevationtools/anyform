@@ -148,6 +148,12 @@ func (orc* Orchestrator) Clean(ctx context.Context) error {
   return os.RemoveAll(orc.globe.Config.Orchestrator.GenfilesDir)
 }
 
+func (orc* Orchestrator) GetStage(stageName string) (*Stage, error) {
+  stage, found := orc.Stages[stageName]
+  if !found { return nil, Errorf("stage not found: %v", stageName) }
+  return stage, nil
+}
+
 func (orc *Orchestrator) stdout(format string, args... any) {
 	orc.fprintfln(os.Stdout, format, args...)
 }
