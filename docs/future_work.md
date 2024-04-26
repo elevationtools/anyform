@@ -19,6 +19,10 @@
 - Better name than "config" for the application specific configuration passed to
   stages within the cell's `anyform.jsonnet` file.
 
+- Consider switching from using `{{ .Env.ANYFORM_STAGE_FOO }}` to something like
+  `{{ .Anyform.StageFoo }}`.  If the environment variables are completely
+  removed then this means all stage stamp dirs would be usable directly, which
+  is great for troubleshooting / surgery / etc.
 
 ### Additions / Non-breaking Changes
 
@@ -32,12 +36,6 @@
 
 - If a stage hasn't even been brought up at all, then assume it's down.  Perhaps
   guard with a flag like "--assume-down".
-
-- Support "one shot" stages that shouldn't be run again if they've already
-  succeeded.
-  - Support manually forcing them to run again.
-  - Perhaps add a new state, or new field in the state file, which if it's set
-    then don't run the stage.
 
 - Restamp on `down` in some scenarios: e.g. impl has changed.
 
@@ -60,6 +58,17 @@
 - Add configo as a stamper.
 
 - "make -C" like feature to chdir without having to chdir.
+
+
+Probably not:
+
+- Support "one shot" stages that shouldn't be run again if they've already
+  succeeded.
+  - Doesn't work when "genfiles" is lost though, would require remote state
+    storage too : /
+  - Support manually forcing them to run again.
+  - Perhaps add a new state, or new field in the state file, which if it's set
+    then don't run the stage.
 
 #### Printing/Logging Improvements
 
